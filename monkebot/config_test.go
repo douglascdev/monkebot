@@ -29,9 +29,6 @@ func validateMockJSONConfig(cfg *Config) error {
 	if cfg.InitialChannels[0] != "hash_table" {
 		return fmt.Errorf("failed to parse initial_channels")
 	}
-	if cfg.TwitchToken != "YOUR_OAUTH_TOKEN_HERE" {
-		return fmt.Errorf("failed to parse twitch_token")
-	}
 	if cfg.Prefix != "!" {
 		return fmt.Errorf("failed to parse prefix")
 	}

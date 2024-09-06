@@ -4,20 +4,90 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/gempir/go-twitch-irc/v4"
 )
 
+type MessageSender interface {
+	Say(channel string, message string)
+}
+
 var commands = []Command{
 	{
 		Name:        "ping",
-		Aliases:     []string{"pong"},
+		Aliases:     []string{},
 		Usage:       "ping",
-		Description: "Ping!",
+		Description: "Responds with pong and latency to twitch in milliseconds",
 		Cooldown:    5,
-		Execute: func(message *Message, mb *Monkebot) error {
-			latency := fmt.Sprintf("%d ms", time.Now().Sub(message.Time).Milliseconds())
-			mb.Say(message.Channel, fmt.Sprintf("🐒 Pong! Latency: %s", latency))
+		Execute: func(message *Message, sender MessageSender, args []string) error {
+			latency := fmt.Sprintf("%d ms", time.Since(message.Time).Milliseconds())
+			sender.Say(message.Channel, fmt.Sprintf("🐒 Pong! Latency: %s", latency))
+			return nil
+		},
+	},
+	{
+		Name:        "senzp",
+		Aliases:     []string{},
+		Usage:       "senzp <text>",
+		Description: "Translates senzp language to english",
+		Cooldown:    5,
+		Execute: func(message *Message, sender MessageSender, args []string) error {
+			cleanString := func(s string) string {
+				cleaned := []rune{}
+				for _, r := range s {
+					if !unicode.Is(unicode.Mn, r) { // Filter out combining marks
+						cleaned = append(cleaned, r)
+					}
+				}
+				trimmed := strings.Trim(string(cleaned), " ")
+				return strings.ReplaceAll(trimmed, "  ", " ")
+			}
+			for i, word := range args {
+				allLetter := true
+				for _, r := range word {
+					if !unicode.IsLetter(r) {
+						allLetter = false
+						break
+					}
+				}
+				if allLetter && word != " " && word != "" && word != "senzpTest" {
+					emoteMap := map[string]string{
+						"elisAsk":    "catAsk",
+						"mysztiHmmm": "hmm",
+						"peeepoHUH":  "wtfwtfwtf",
+						"exemYes":    "Yes",
+					}
+					if emote, ok := emoteMap[word]; ok {
+						args[i] = " " + emote + " "
+						continue
+					}
+					args[i] = " <emote> "
+				}
+			}
+			senzpWords := strings.Split(strings.Join(args, ""), "senzpTest")
+
+			senzpAlphabet := []string{
+				"🅰️", "🅱️", "©️", "↩️", "📧", "🎏", "🗜️", "♓", "ℹ️", "🗾", "🎋", "👢", "〽️", "♑", "🅾️", "🅿️", "♌", "®️", "⚡", "🌴", "⛎", "♈", "〰️", "❌", "🌱", "💤",
+			}
+			senzpRuneAlphabet := [][]rune{}
+			for _, letter := range senzpAlphabet {
+				senzpRuneAlphabet = append(senzpRuneAlphabet, []rune(letter))
+			}
+			alphabet := []string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"}
+			for i, word := range senzpWords {
+				newWord := strings.Map(func(c rune) rune {
+					for j, senzpRune := range senzpRuneAlphabet {
+						if c == senzpRune[0] {
+							return []rune(alphabet[j])[0]
+						}
+					}
+					return c
+				}, word)
+				senzpWords[i] = newWord
+			}
+			result := cleanString(strings.Join(senzpWords, " "))
+			sender.Say(message.Channel, result)
 			return nil
 		},
 	},
@@ -37,7 +107,7 @@ func createCommandMap(commands []Command) map[string]Command {
 	return commandMap
 }
 
-func HandleCommands(message *Message, mb *Monkebot, config *Config) error {
+func HandleCommands(message *Message, sender MessageSender, config *Config) error {
 	if !strings.HasPrefix(message.Message, config.Prefix) {
 		return nil
 	}
@@ -45,7 +115,7 @@ func HandleCommands(message *Message, mb *Monkebot, config *Config) error {
 	args := strings.Split(message.Message[len(config.Prefix):], " ")
 
 	if cmd, ok := commandMap[args[0]]; ok {
-		if err := cmd.Execute(message, mb); err != nil {
+		if err := cmd.Execute(message, sender, args); err != nil {
 			return err
 		}
 	} else {
@@ -86,5 +156,5 @@ type Command struct {
 	Usage       string
 	Description string
 	Cooldown    int
-	Execute     func(message *Message, mb *Monkebot) error
+	Execute     func(message *Message, sender MessageSender, args []string) error
 }
