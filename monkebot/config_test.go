@@ -43,7 +43,7 @@ func validateMockJSONConfig(cfg *Config) error {
 	return nil
 }
 
-func TestMonkebotLoadConfig(t *testing.T) {
+func TestLoadConfig(t *testing.T) {
 	mockJSONBytes := generateMockJSON()
 
 	cfg, err := LoadConfig(mockJSONBytes)
@@ -57,7 +57,7 @@ func TestMonkebotLoadConfig(t *testing.T) {
 	}
 }
 
-func TestMonkebotLoadConfigFromFile(t *testing.T) {
+func TestLoadConfigFromFile(t *testing.T) {
 	file, err := os.CreateTemp(os.TempDir(), "monkebotTestJson")
 	if err != nil {
 		t.Errorf("failed to create temp file: %v", err)
