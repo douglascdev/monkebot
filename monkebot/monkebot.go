@@ -22,26 +22,25 @@ func NewMonkebot(cfg Config, token string) (*Monkebot, error) {
 
 	client.OnPrivateMessage(func(message twitch.PrivateMessage) {
 		startTime := time.Now()
-		if message.Message == cfg.Prefix+"ping" {
-			latency := time.Now().Sub(message.Time)
-			response := fmt.Sprintf("🐒 Pong! Latency: %dms", latency.Milliseconds())
-			mb.Say(message.Channel, response)
+		normalizedMsg := NewMessage(message)
+		if err := HandleCommands(normalizedMsg, mb, &cfg); err != nil {
+			log.Println(err)
 		}
 		internalLatency := fmt.Sprintf("%d ms", time.Now().Sub(startTime).Milliseconds())
-		log.Printf("Message in %s -> '%s: %s'. Internal latency: %s.", message.Channel, message.User.Name, message.Message, internalLatency)
+		log.Printf("message in %s -> '%s: %s'. Internal latency: %s.", message.Channel, message.User.Name, message.Message, internalLatency)
 	})
 
 	client.OnConnect(func() {
-		log.Println("Connected to Twitch, joining initial channels")
+		log.Println("connected to Twitch, joining initial channels")
 		mb.Join(cfg.InitialChannels...)
 	})
 
 	client.OnSelfJoinMessage(func(message twitch.UserJoinMessage) {
-		log.Printf("Joined channel %s", message.Channel)
+		log.Printf("joined channel %s", message.Channel)
 	})
 
 	client.OnSelfPartMessage(func(message twitch.UserPartMessage) {
-		log.Printf("Parted channel %s", message.Channel)
+		log.Printf("parted channel %s", message.Channel)
 	})
 	return mb, nil
 }
