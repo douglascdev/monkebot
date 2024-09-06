@@ -13,6 +13,7 @@ func generateMockJSON() []byte {
 		"TwitchToken":     "YOUR_OAUTH_TOKEN_HERE",
 		"Prefix":          "!",
 		"UserID":          "YOUR_USER_ID_HERE",
+		"Login":           "YOUR_LOGIN_HERE",
 		"ClientID":        "YOUR_CLIENT_ID_HERE",
 	}
 
@@ -36,6 +37,9 @@ func validateMockJSONConfig(cfg *Config) error {
 	}
 	if cfg.UserID != "YOUR_USER_ID_HERE" {
 		return fmt.Errorf("failed to parse user_id")
+	}
+	if cfg.Login != "YOUR_LOGIN_HERE" {
+		return fmt.Errorf("failed to parse login")
 	}
 	if cfg.ClientID != "YOUR_CLIENT_ID_HERE" {
 		return fmt.Errorf("failed to parse client_id")

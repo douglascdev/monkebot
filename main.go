@@ -1,8 +1,38 @@
 package main
 
-import "monkebot/monkebot"
+import (
+	"flag"
+	"log"
+	"monkebot/monkebot"
+	"os"
+)
 
 func main() {
-	mb := monkebot.NewMonkebot([]string{"hash_table"})
-	print(mb.InitialChannels)
+	cfgPath := flag.String("cfg", "config.json", "path to config file")
+	token := flag.String("token", "", "twitch oauth token")
+	flag.Parse()
+
+	_, err := os.Stat(*cfgPath)
+	if os.IsNotExist(err) {
+		log.Fatalf("config file %s does not exist", *cfgPath)
+	}
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	cfg, err := monkebot.LoadConfigFromFile(*cfgPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	mb, err := monkebot.NewMonkebot(*cfg, *token)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = mb.Connect()
+	if err != nil {
+		log.Fatal(err)
+	}
 }
