@@ -21,12 +21,14 @@ func NewMonkebot(cfg Config, token string) (*Monkebot, error) {
 	}
 
 	client.OnPrivateMessage(func(message twitch.PrivateMessage) {
-		log.Printf("Received message from %s: %s", message.User.Name, message.Message)
+		startTime := time.Now()
 		if message.Message == cfg.Prefix+"ping" {
 			latency := time.Now().Sub(message.Time)
 			response := fmt.Sprintf("🐒 Pong! Latency: %dms", latency.Milliseconds())
 			mb.Say(message.Channel, response)
 		}
+		internalLatency := fmt.Sprintf("%d ms", time.Now().Sub(startTime).Milliseconds())
+		log.Printf("Message in %s -> '%s: %s'. Internal latency: %s.", message.Channel, message.User.Name, message.Message, internalLatency)
 	})
 
 	client.OnConnect(func() {
