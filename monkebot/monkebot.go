@@ -61,8 +61,7 @@ func (t *Monkebot) Part(channels ...string) {
 }
 
 func (t *Monkebot) Say(channel string, message string) {
-	cleanMessage := potatFilters.ReplaceConfusable(message)
-	if potatFilters.Test(cleanMessage, potatFilters.FilterAll) {
+	if potatFilters.Test(message, potatFilters.FilterAll) {
 		log.Printf("Message filtered in channel '%s': '%s'", channel, message)
 		t.TwitchClient.Say(channel, "⚠ Message withheld for containing a banned phrase...")
 		return
