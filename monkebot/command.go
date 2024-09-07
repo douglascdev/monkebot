@@ -13,6 +13,41 @@ type MessageSender interface {
 	Say(channel string, message string)
 }
 
+type Command struct {
+	Name        string
+	Aliases     []string
+	Usage       string
+	Description string
+	Cooldown    int
+	NoPrefix    bool
+	Execute     func(message *Message, sender MessageSender, args []string) error
+}
+
+type Chatter struct {
+	Name string
+	ID   string
+}
+
+// Message normalized to be platform agnostic
+type Message struct {
+	Message string
+	Time    time.Time
+	Channel string
+	Chatter Chatter
+}
+
+func NewMessage(msg twitch.PrivateMessage) *Message {
+	return &Message{
+		Message: msg.Message,
+		Time:    msg.Time,
+		Channel: msg.Channel,
+		Chatter: Chatter{
+			Name: msg.User.Name,
+			ID:   msg.User.ID,
+		},
+	}
+}
+
 var commands = []Command{
 	{
 		Name:        "ping",
@@ -20,6 +55,7 @@ var commands = []Command{
 		Usage:       "ping",
 		Description: "Responds with pong and latency to twitch in milliseconds",
 		Cooldown:    5,
+		NoPrefix:    false,
 		Execute: func(message *Message, sender MessageSender, args []string) error {
 			latency := fmt.Sprintf("%d ms", time.Since(message.Time).Milliseconds())
 			sender.Say(message.Channel, fmt.Sprintf("🐒 Pong! Latency: %s", latency))
@@ -27,11 +63,12 @@ var commands = []Command{
 		},
 	},
 	{
-		Name:        "senzp",
+		Name:        "senzpTest",
 		Aliases:     []string{},
-		Usage:       "senzp <text>",
+		Usage:       "senzpTest <text>",
 		Description: "Translates senzp language to english",
 		Cooldown:    5,
+		NoPrefix:    true,
 		Execute: func(message *Message, sender MessageSender, args []string) error {
 			cleanString := func(s string) string {
 				cleaned := []rune{}
@@ -97,22 +134,25 @@ var commandMap = createCommandMap(commands)
 
 // Maps command names and aliases to Command structs
 func createCommandMap(commands []Command) map[string]Command {
-	commandMap := make(map[string]Command)
+	cmdMap := make(map[string]Command)
 	for _, cmd := range commands {
-		commandMap[cmd.Name] = cmd
+		cmdMap[cmd.Name] = cmd
 		for _, alias := range cmd.Aliases {
-			commandMap[alias] = cmd
+			cmdMap[alias] = cmd
 		}
 	}
-	return commandMap
+	return cmdMap
 }
 
 func HandleCommands(message *Message, sender MessageSender, config *Config) error {
-	if len(message.Message) <= len(config.Prefix) || !strings.HasPrefix(message.Message, config.Prefix) {
-		return nil
-	}
+	var args []string
 
-	args := strings.Split(message.Message[len(config.Prefix):], " ")
+	hasPrefix := strings.HasPrefix(message.Message, config.Prefix)
+	if hasPrefix {
+		args = strings.Split(message.Message[len(config.Prefix):], " ")
+	} else {
+		args = strings.Split(message.Message, " ")
+	}
 
 	if cmd, ok := commandMap[args[0]]; ok {
 		if len(args) > 1 {
@@ -124,43 +164,9 @@ func HandleCommands(message *Message, sender MessageSender, config *Config) erro
 		if err := cmd.Execute(message, sender, args); err != nil {
 			return err
 		}
-	} else {
+	} else if hasPrefix {
 		return fmt.Errorf("unknown command: '%s' called by '%s'", args, message.Chatter.Name)
 	}
 
 	return nil
-}
-
-type Chatter struct {
-	Name string
-	ID   string
-}
-
-// Message normalized to be platform agnostic
-type Message struct {
-	Message string
-	Time    time.Time
-	Channel string
-	Chatter Chatter
-}
-
-func NewMessage(msg twitch.PrivateMessage) *Message {
-	return &Message{
-		Message: msg.Message,
-		Time:    msg.Time,
-		Channel: msg.Channel,
-		Chatter: Chatter{
-			Name: msg.User.Name,
-			ID:   msg.User.ID,
-		},
-	}
-}
-
-type Command struct {
-	Name        string
-	Aliases     []string
-	Usage       string
-	Description string
-	Cooldown    int
-	Execute     func(message *Message, sender MessageSender, args []string) error
 }
