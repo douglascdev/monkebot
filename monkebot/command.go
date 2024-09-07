@@ -108,13 +108,19 @@ func createCommandMap(commands []Command) map[string]Command {
 }
 
 func HandleCommands(message *Message, sender MessageSender, config *Config) error {
-	if !strings.HasPrefix(message.Message, config.Prefix) {
+	if len(message.Message) <= len(config.Prefix) || !strings.HasPrefix(message.Message, config.Prefix) {
 		return nil
 	}
 
 	args := strings.Split(message.Message[len(config.Prefix):], " ")
 
 	if cmd, ok := commandMap[args[0]]; ok {
+		if len(args) > 1 {
+			argsStart := strings.Index(message.Message, " ")
+			args = strings.Split(message.Message[argsStart:], " ")
+		} else {
+			args = []string{}
+		}
 		if err := cmd.Execute(message, sender, args); err != nil {
 			return err
 		}
