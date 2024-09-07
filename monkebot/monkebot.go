@@ -60,5 +60,6 @@ func (t *Monkebot) Part(channels ...string) {
 }
 
 func (t *Monkebot) Say(channel string, message string) {
-	t.TwitchClient.Say(channel, message)
+	const invisPrefix = "󠀀�" // prevents command injection
+	t.TwitchClient.Say(channel, invisPrefix+message)
 }
