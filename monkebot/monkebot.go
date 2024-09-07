@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/Potat-Industries/go-potatFilters"
 	"github.com/gempir/go-twitch-irc/v4"
 )
 
@@ -26,7 +27,7 @@ func NewMonkebot(cfg Config, token string) (*Monkebot, error) {
 		if err := HandleCommands(normalizedMsg, mb, &cfg); err != nil {
 			log.Println(err)
 		}
-		internalLatency := fmt.Sprintf("%d ms", time.Now().Sub(startTime).Milliseconds())
+		internalLatency := fmt.Sprintf("%d ms", time.Since(startTime).Milliseconds())
 		log.Printf("message in %s -> '%s: %s'. Internal latency: %s.", message.Channel, message.User.Name, message.Message, internalLatency)
 	})
 
@@ -60,6 +61,10 @@ func (t *Monkebot) Part(channels ...string) {
 }
 
 func (t *Monkebot) Say(channel string, message string) {
+	if potatFilters.Test(message, potatFilters.FilterStrict) {
+		log.Printf("message filtered in %s: '%s'", channel, message)
+		return
+	}
 	const invisPrefix = "󠀀�" // prevents command injection
 	t.TwitchClient.Say(channel, invisPrefix+message)
 }

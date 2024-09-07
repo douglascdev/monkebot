@@ -90,10 +90,21 @@ var commands = []Command{
 				}
 				if allLetter && word != " " && word != "" && word != "senzpTest" {
 					emoteMap := map[string]string{
-						"elisAsk":    "catAsk",
-						"mysztiHmmm": "hmm",
-						"peeepoHUH":  "wtfwtfwtf",
-						"exemYes":    "Yes",
+						"elisAsk":       "catAsk",
+						"mysztiHmmm":    "hmm",
+						"peeepoHUH":     "wtfwtfwtf",
+						"exemYes":       "Yes",
+						"mysztiOh":      "Oh",
+						"vulpNou":       "NoU",
+						"vulpSoCute":    "SoCute",
+						"mysztiOopsie":  "oopsie",
+						"senzpNOWAYING": "NOWAYING",
+						"elisEHEHE":     "EHEHE",
+						"sammim1HEHE":   "EHEHE",
+						"sammim1Wade":   "wade",
+						"hvdrasWowie":   "Wowie",
+						"hvdrasWoah":    "NOWAY",
+						"neeshSadge":    "sadg",
 					}
 					if emote, ok := emoteMap[word]; ok {
 						args[i] = " " + emote + " "
