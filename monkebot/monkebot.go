@@ -61,8 +61,10 @@ func (t *Monkebot) Part(channels ...string) {
 }
 
 func (t *Monkebot) Say(channel string, message string) {
-	if potatFilters.Test(message, potatFilters.FilterStrict) {
-		log.Printf("message filtered in %s: '%s'", channel, message)
+	cleanMessage := potatFilters.ReplaceConfusable(message)
+	if potatFilters.Test(cleanMessage, potatFilters.FilterAll) {
+		log.Printf("Message filtered in channel '%s': '%s'", channel, message)
+		t.TwitchClient.Say(channel, "⚠ Message withheld for containing a banned phrase...")
 		return
 	}
 	const invisPrefix = "󠀀�" // prevents command injection
