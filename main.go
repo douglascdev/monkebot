@@ -13,7 +13,7 @@ func main() {
 
 	_, err := os.Stat(*cfgPath)
 	if os.IsNotExist(err) {
-		log.Fatalf("config file %s does not exist, creating from template", *cfgPath)
+		log.Printf("config file %s does not exist, creating from template", *cfgPath)
 
 		var file *os.File
 		file, err = os.Create(*cfgPath)
@@ -35,6 +35,9 @@ func main() {
 			log.Fatalf("failed to create temaplate '%s' with error %v", *cfgPath, err)
 			os.Exit(1)
 		}
+
+		log.Printf("template %s created successfully, please edit the file and run the bot again", *cfgPath)
+		os.Exit(0)
 	}
 
 	if err != nil {
