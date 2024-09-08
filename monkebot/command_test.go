@@ -33,7 +33,10 @@ func TestCommandMap(t *testing.T) {
 }
 
 func TestCommandSenzp(t *testing.T) {
-	cmd := commandMap["senzpTest"]
+	cmd, ok := commandMap["senzpTest"]
+	if !ok {
+		t.Error("command not in commandMap")
+	}
 	expectedResponses := map[string]string{
 		"🅰️ 🅱️ ©️ ↩️ 📧 🎏 🗜️ ♓ ℹ️ 🗾 🎋 👢 〽️ ♑ 🅾️ 🅿️ ♌ ®️ ⚡ 🌴 ⛎ ♈ 〰️ ❌ 🌱 💤":                                          "abcdefghijklmnopqrstuvwxyz",
 		"♓ 🅰️ ⚡ senzpTest 🌴 🅾️ senzpTest ↩️ 🅾️ senzpTest 〰️ ℹ️ 🌴 ♓ senzpTest 〽️ ℹ️ ↩️ ↩️ 👢 📧 senzpTest ♑ 🅰️ 〽️ 📧": "has to do with middle name",
