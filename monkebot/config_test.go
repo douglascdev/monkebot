@@ -1,31 +1,12 @@
 package monkebot
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
 )
 
-func generateMockJSON() []byte {
-	cfg := map[string]interface{}{
-		"InitialChannels": []string{"hash_table"},
-		"TwitchToken":     "YOUR_OAUTH_TOKEN_HERE",
-		"Prefix":          "!",
-		"UserID":          "YOUR_USER_ID_HERE",
-		"Login":           "YOUR_LOGIN_HERE",
-		"ClientID":        "YOUR_CLIENT_ID_HERE",
-	}
-
-	jsonBytes, err := json.Marshal(cfg)
-	if err != nil {
-		panic(fmt.Errorf("error marshalling mock json: %v", err))
-	}
-
-	return jsonBytes
-}
-
-func validateMockJSONConfig(cfg *Config) error {
+func validateTemplateJSONConfig(cfg *Config) error {
 	if cfg.InitialChannels[0] != "hash_table" {
 		return fmt.Errorf("failed to parse initial_channels")
 	}
@@ -45,14 +26,17 @@ func validateMockJSONConfig(cfg *Config) error {
 }
 
 func TestLoadConfig(t *testing.T) {
-	mockJSONBytes := generateMockJSON()
+	mockJSONBytes, err := ConfigTemplateJSON()
+	if err != nil {
+		t.Errorf("failed to generate config template: %v", err)
+	}
 
 	cfg, err := LoadConfig(mockJSONBytes)
 	if err != nil {
 		t.Errorf("failed to load config: %v", err)
 	}
 
-	err = validateMockJSONConfig(cfg)
+	err = validateTemplateJSONConfig(cfg)
 	if err != nil {
 		t.Errorf("failed to validate config: %v", err)
 	}
@@ -65,7 +49,10 @@ func TestLoadConfigFromFile(t *testing.T) {
 	}
 	defer file.Close()
 
-	mockJSONBytes := generateMockJSON()
+	mockJSONBytes, err := ConfigTemplateJSON()
+	if err != nil {
+		t.Errorf("failed to generate config template: %v", err)
+	}
 	file.WriteString(string(mockJSONBytes))
 
 	config, err := LoadConfigFromFile(file.Name())
@@ -73,8 +60,38 @@ func TestLoadConfigFromFile(t *testing.T) {
 		t.Errorf("failed to load config from file: %v", err)
 	}
 
-	err = validateMockJSONConfig(config)
+	err = validateTemplateJSONConfig(config)
 	if err != nil {
 		t.Errorf("failed to validate config: %v", err)
+	}
+}
+
+// check if all Config values are set in the template using reflection.
+// guarantees that changes made in Config are saved in new templates.
+func TestConfigTemplateJSON(t *testing.T) {
+	// see if the function works against a known invalid template.
+	// incompleteTemplate doesn't have TwitchToken and Login fields.
+	incompleteTemplate := []byte(`
+{
+	"InitialChannels": ["abc"],
+  "ClientID": "123",
+  "UserID": "sdasd",
+  "Prefix": "!"
+}
+	`)
+	_, err := LoadConfig(incompleteTemplate)
+	if err == nil {
+		t.Errorf("partially initialized config template not caught by LoadConfig validation. Template: %s", string(incompleteTemplate))
+	}
+
+	templateBytes, err := ConfigTemplateJSON()
+	if err != nil {
+		t.Errorf("failed to generate config template: %v", err)
+	}
+
+	// test against the actual template
+	_, err = LoadConfig(templateBytes)
+	if err != nil {
+		t.Errorf("failed to validate config template: %v", err)
 	}
 }

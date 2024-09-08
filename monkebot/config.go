@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"reflect"
 )
 
 // changes to this struct must be reflected in tests and config.json
@@ -16,14 +17,23 @@ type Config struct {
 	ClientID        string   `json:"ClientID"`
 }
 
-func LoadConfig(data []byte) (*Config, error) {
-	var config Config
-	err := json.Unmarshal(data, &config)
+// unmarshal config and ensure every field is set or return an error
+func LoadConfig(JSONData []byte) (*Config, error) {
+	var cfg Config
+
+	err := json.Unmarshal(JSONData, &cfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse config file: %w", err)
+		return nil, fmt.Errorf("failed to unmarshal config template: %v", err)
 	}
 
-	return &config, err
+	fields := reflect.ValueOf(&cfg).Elem()
+	for i := 0; i < fields.NumField(); i++ {
+		if fields.Field(i).IsZero() {
+			return nil, fmt.Errorf("missing field: %s", fields.Type().Field(i).Name)
+		}
+	}
+
+	return &cfg, nil
 }
 
 func LoadConfigFromFile(filename string) (*Config, error) {
@@ -38,4 +48,21 @@ func LoadConfigFromFile(filename string) (*Config, error) {
 	}
 
 	return config, nil
+}
+
+func ConfigTemplateJSON() ([]byte, error) {
+	cfg := Config{
+		InitialChannels: []string{"hash_table"},
+		TwitchToken:     "YOUR_OAUTH_TOKEN_HERE",
+		Prefix:          "!",
+		UserID:          "YOUR_USER_ID_HERE",
+		Login:           "YOUR_LOGIN_HERE",
+		ClientID:        "YOUR_CLIENT_ID_HERE",
+	}
+
+	jsonBytes, err := json.MarshalIndent(cfg, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("error marshalling template JSON: %v", err)
+	}
+	return jsonBytes, nil
 }
