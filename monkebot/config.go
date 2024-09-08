@@ -8,6 +8,7 @@ import (
 
 // changes to this struct must be reflected in tests and config.json
 type Config struct {
+	TwitchToken     string   `json:"TwitchToken"`
 	InitialChannels []string `json:"InitialChannels"`
 	Prefix          string   `json:"Prefix"`
 	UserID          string   `json:"UserID"`

@@ -50,7 +50,7 @@ func TestCommandSenzp(t *testing.T) {
 	}
 
 	for input, expected := range expectedResponses {
-		err := cmd.Execute(&Message{}, &sender, strings.Split(input, " "))
+		err := cmd.Execute(&Message{Channel: "test"}, &sender, strings.Split(input, " "))
 		if err != nil {
 			t.Errorf("unexpected error: %s", err)
 		}

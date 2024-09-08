@@ -9,7 +9,6 @@ import (
 
 func main() {
 	cfgPath := flag.String("cfg", "config.json", "path to config file")
-	token := flag.String("token", "", "twitch oauth token")
 	flag.Parse()
 
 	_, err := os.Stat(*cfgPath)
@@ -26,7 +25,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	mb, err := monkebot.NewMonkebot(*cfg, *token)
+	mb, err := monkebot.NewMonkebot(*cfg)
 	if err != nil {
 		log.Fatal(err)
 	}

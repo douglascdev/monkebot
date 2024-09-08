@@ -14,8 +14,8 @@ type Monkebot struct {
 	Cfg          Config
 }
 
-func NewMonkebot(cfg Config, token string) (*Monkebot, error) {
-	client := twitch.NewClient(cfg.Login, "oauth:"+token)
+func NewMonkebot(cfg Config) (*Monkebot, error) {
+	client := twitch.NewClient(cfg.Login, "oauth:"+cfg.TwitchToken)
 	mb := &Monkebot{
 		TwitchClient: client,
 		Cfg:          cfg,
