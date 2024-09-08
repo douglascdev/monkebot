@@ -37,7 +37,7 @@ jobs:
         go build -v -ldflags "-s -w" -o monkebot-windows.exe
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: monkebot
         path: |
@@ -52,7 +52,7 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Download artifacts
-      uses: actions/download-artifact@v4.1.7
+      uses: actions/download-artifact@v4
       with:
         name: 'monkebot'
         path: 'artifacts'
