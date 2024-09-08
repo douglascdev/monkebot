@@ -33,7 +33,7 @@ func TestCommandMap(t *testing.T) {
 }
 
 func TestCommandSenzp(t *testing.T) {
-	cmd := commandMap["senzp"]
+	cmd := commandMap["senzpTest"]
 	expectedResponses := map[string]string{
 		"🅰️ 🅱️ ©️ ↩️ 📧 🎏 🗜️ ♓ ℹ️ 🗾 🎋 👢 〽️ ♑ 🅾️ 🅿️ ♌ ®️ ⚡ 🌴 ⛎ ♈ 〰️ ❌ 🌱 💤":                                          "abcdefghijklmnopqrstuvwxyz",
 		"♓ 🅰️ ⚡ senzpTest 🌴 🅾️ senzpTest ↩️ 🅾️ senzpTest 〰️ ℹ️ 🌴 ♓ senzpTest 〽️ ℹ️ ↩️ ↩️ 👢 📧 senzpTest ♑ 🅰️ 〽️ 📧": "has to do with middle name",
@@ -45,12 +45,12 @@ func TestCommandSenzp(t *testing.T) {
 		"peeepoHUH": "wtfwtfwtf",
 	}
 
-	sender := MockSender{
+	sender := &MockSender{
 		responses: []string{},
 	}
 
 	for input, expected := range expectedResponses {
-		err := cmd.Execute(&Message{Channel: "test"}, &sender, strings.Split(input, " "))
+		err := cmd.Execute(&Message{Channel: "test"}, sender, strings.Split(input, " "))
 		if err != nil {
 			t.Errorf("unexpected error: %s", err)
 		}
