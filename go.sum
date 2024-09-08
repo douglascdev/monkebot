@@ -1,5 +1,3 @@
-github.com/Potat-Industries/go-potatFilters v0.1.0 h1:0Cji7RSpF90hHVWngp5Ckw+SpZ4b1kKgGVV8wGj5cwM=
-github.com/Potat-Industries/go-potatFilters v0.1.0/go.mod h1:sbz39k2QTCzF51Ar1FP/GfPMu2YvoCb4Xa1ytxZ9XZ4=
 github.com/Potat-Industries/go-potatFilters v0.1.1 h1:QhVVRjvdyEPdWNyi9cgYIzxaRLErlahu2icsANVhm8w=
 github.com/Potat-Industries/go-potatFilters v0.1.1/go.mod h1:sbz39k2QTCzF51Ar1FP/GfPMu2YvoCb4Xa1ytxZ9XZ4=
 github.com/gempir/go-twitch-irc/v4 v4.0.0 h1:sHVIvbWOv9nHXGEErilclxASv0AaQEr/r/f9C0B9aO8=
