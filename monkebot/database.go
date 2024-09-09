@@ -62,15 +62,27 @@ func CurrentSchema() []string {
 			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT
 		)`,
 		`CREATE TABLE user_platform (
-			user_id INT NOT NULL,
-			platform TEXT NOT NULL,
+			user_id INTEGER NOT NULL,
+			platform_id INTEGER NOT NULL,
 			bot_is_joined BOOL NOT NULL DEFAULT false,
-			PRIMARY KEY (user_id, platform),
+			PRIMARY KEY (user_id, platform_id),
 			FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
-			FOREIGN KEY (platform) REFERENCES platform(name) ON DELETE CASCADE
+			FOREIGN KEY (platform_id) REFERENCES platform(id) ON DELETE CASCADE
 		)`,
 		`CREATE TABLE platform (
-			name TEXT NOT NULL PRIMARY KEY
+			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL
+		)`,
+		`CREATE TABLE command (
+			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL
+		)`,
+		`CREATE TABLE user_platform_command (
+			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+			user_id INTEGER NOT NULL,
+			command_id INTEGER NOT NULL,
+			platform_id INTEGER NOT NULL,
+			FOREIGN KEY (user_id, platform_id, command_id) REFERENCES user_platform(user_id, platform_id, command_id) ON DELETE CASCADE
 		)`,
 
 		// DML

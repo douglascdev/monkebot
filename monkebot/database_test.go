@@ -67,8 +67,11 @@ func TestRunMigrationsCurrentSchema(t *testing.T) {
 	}
 	res := db.QueryRow("SELECT * FROM platform")
 
-	var platform string
-	err = res.Scan(&platform)
+	var (
+		id       int
+		platform string
+	)
+	err = res.Scan(&id, &platform)
 	if err != nil {
 		t.Errorf("failed to scan platform value: %v", err)
 	}
