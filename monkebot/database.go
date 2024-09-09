@@ -14,7 +14,7 @@ type DBMigration struct {
 	Stmts   []string
 }
 
-// makes migrations sortable(implement sort.Interface)
+// makes migrations sortable by version(implements sort.Interface)
 type DBMigrations struct {
 	Migrations []DBMigration
 }
@@ -44,7 +44,7 @@ func InitDB(driver string, dataSourceName string, configPath string) (*sql.DB, e
 
 	migrations := DBMigrations{
 		Migrations: []DBMigration{
-			{Version: 1, Stmts: CurrentSchemaDDL()},
+			{Version: 1, Stmts: CurrentSchema()},
 		},
 	}
 	err = RunMigrations(db, configPath, &migrations)
@@ -55,15 +55,30 @@ func InitDB(driver string, dataSourceName string, configPath string) (*sql.DB, e
 	return db, nil
 }
 
-func CurrentSchemaDDL() []string {
+func CurrentSchema() []string {
 	return []string{
-		`CREATE TABLE IF NOT EXISTS users (
-			user_id TEXT NOT NULL PRIMARY KEY,
+		// DDL
+		`CREATE TABLE user (
+			id INT NOT NULL PRIMARY KEY AUTOINCREMENT,
 		)`,
+		`CREATE TABLE user_platform (
+			user_id INT NOT NULL,
+			platform TEXT NOT NULL,
+			bot_is_joined BOOL NOT NULL DEFAULT false,
+			PRIMARY KEY (user_id, platform),
+			FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+			FOREIGN KEY (platform) REFERENCES platform(name) ON DELETE CASCADE
+		)`,
+		`CREATE TABLE platform (
+			name TEXT NOT NULL PRIMARY KEY,
+		)`,
+
+		// DML
+		`INSERT INTO platform (name) VALUES ('twitch')`,
 	}
 }
 
-// Run migrations on the database.
+// Run migrations in the database.
 // If the migration succeeds, the version in DBConfig is updated to the current version.
 func RunMigrations(db *sql.DB, configPath string, migrations *DBMigrations) error {
 	// sort migrations by version
@@ -93,6 +108,13 @@ func RunMigrations(db *sql.DB, configPath string, migrations *DBMigrations) erro
 			if err != nil {
 				return fmt.Errorf("failed to execute migration: %w", err)
 			}
+		}
+
+		// version 1 creates the database from scratch so there's no need to run the other migrations,
+		// and we can just update the version to the latest one.
+		if migration.Version == 1 {
+			currentVersion = migrations.Migrations[len(migrations.Migrations)-1].Version
+			break
 		}
 	}
 
