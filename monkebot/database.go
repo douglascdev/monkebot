@@ -8,6 +8,11 @@ import (
 	_ "github.com/ncruces/go-sqlite3/embed"
 )
 
+type Migration struct {
+	Version int
+	Stmts   []string
+}
+
 func InitDB(driver string, dataSourceName string, configPath string) (*sql.DB, error) {
 	db, err := sql.Open(driver, dataSourceName)
 	if err != nil {
@@ -19,7 +24,8 @@ func InitDB(driver string, dataSourceName string, configPath string) (*sql.DB, e
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	err = RunMigrations(db, configPath)
+	migrations := []Migration{}
+	err = RunMigrations(db, configPath, migrations)
 	if err != nil {
 		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
@@ -37,7 +43,7 @@ func CurrentSchemaDDL() []string {
 
 // Run migrations on the database.
 // If the migration succeeds, the version in DBConfig is updated to the current version.
-func RunMigrations(db *sql.DB, configPath string) error {
+func RunMigrations(db *sql.DB, configPath string, migrations []Migration) error {
 	config, err := LoadConfigFromFile(configPath)
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
@@ -66,20 +72,14 @@ func RunMigrations(db *sql.DB, configPath string) error {
 		return err
 	}
 
-	type Migration struct {
-		Version int
-		Stmts   []string
-	}
-	// migrations to be applied sequentially from 0 to currentVersion
-	// keep sorted by version
-	migrations := []Migration{}
-
 	tx, err := db.Begin()
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer tx.Rollback()
 
+	// migrations to be applied sequentially from 0 to currentVersion
+	// keep sorted by version
 	for _, migration := range migrations {
 		if currentVersion < migration.Version {
 			break
