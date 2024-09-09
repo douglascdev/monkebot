@@ -2,8 +2,9 @@ package monkebot
 
 import (
 	"fmt"
-	"log"
 	"time"
+
+	"github.com/rs/zerolog/log"
 
 	"github.com/Potat-Industries/go-potatFilters"
 	"github.com/gempir/go-twitch-irc/v4"
@@ -25,23 +26,30 @@ func NewMonkebot(cfg Config) (*Monkebot, error) {
 		startTime := time.Now()
 		normalizedMsg := NewMessage(message)
 		if err := HandleCommands(normalizedMsg, mb, &cfg); err != nil {
-			log.Println(err)
+			log.Info().Err(err)
 		}
 		internalLatency := fmt.Sprintf("%d ms", time.Since(startTime).Milliseconds())
-		log.Printf("message in %s -> '%s: %s'. Internal latency: %s.", message.Channel, message.User.Name, message.Message, internalLatency)
+		log.Info().
+			Str("channel", message.Channel).
+			Str("user", message.User.Name).
+			Str("msg", message.Message).
+			Str("internalLatency", internalLatency).
+			Msg("new message")
 	})
 
 	client.OnConnect(func() {
-		log.Println("connected to Twitch, joining initial channels")
+		log.Info().
+			Str("login", cfg.Login).
+			Msg("connected to Twitch")
 		mb.Join(cfg.InitialChannels...)
 	})
 
 	client.OnSelfJoinMessage(func(message twitch.UserJoinMessage) {
-		log.Printf("joined channel %s", message.Channel)
+		log.Info().Str("channel", message.Channel).Msg("joined channel")
 	})
 
 	client.OnSelfPartMessage(func(message twitch.UserPartMessage) {
-		log.Printf("parted channel %s", message.Channel)
+		log.Info().Str("channel", message.Channel).Msg("parted channel")
 	})
 	return mb, nil
 }
@@ -62,7 +70,10 @@ func (t *Monkebot) Part(channels ...string) {
 
 func (t *Monkebot) Say(channel string, message string) {
 	if potatFilters.Test(message, potatFilters.FilterAll) {
-		log.Printf("Message filtered in channel '%s': '%s'", channel, message)
+		log.Warn().
+			Str("channel", channel).
+			Str("message", message).
+			Msg("message filtered")
 		t.TwitchClient.Say(channel, "⚠ Message withheld for containing a banned phrase...")
 		return
 	}
