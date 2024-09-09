@@ -90,6 +90,39 @@ func CurrentSchema() []string {
 	}
 }
 
+func InsertCommands(db *sql.DB, commands []Command) error {
+	var (
+		id  int
+		err error
+	)
+	// check if commands were already added(expected to return ErrNoRows)
+	err = db.QueryRow("SELECT id FROM command LIMIT 1").Scan(&id)
+	if err != sql.ErrNoRows {
+		return fmt.Errorf("failed to get command: %w", err)
+	}
+
+	var tx *sql.Tx
+	tx, err = db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	for _, command := range commands {
+		_, err = tx.Exec("INSERT INTO command (name) VALUES (?)", command.Name)
+		if err != nil {
+			return fmt.Errorf("failed to insert command: %w", err)
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
+}
+
 // Run migrations in the database.
 // If the migration succeeds, the version in DBConfig is updated to the current version.
 func RunMigrations(db *sql.DB, configPath string, migrations *DBMigrations) error {

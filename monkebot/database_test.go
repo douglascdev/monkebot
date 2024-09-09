@@ -65,7 +65,7 @@ func TestRunMigrationsCurrentSchema(t *testing.T) {
 	if err != nil {
 		t.Errorf("failed to run migrations with current schema: %v", err)
 	}
-	res := db.QueryRow("SELECT * FROM platform")
+	res := db.QueryRow("SELECT id, name FROM platform")
 
 	var (
 		id       int
@@ -174,6 +174,48 @@ func TestRunMigrationsNewMigrations(t *testing.T) {
 		name string
 	)
 	err = res.Scan(&id, &name)
+	if err != nil {
+		t.Errorf("failed to scan name value: %v", err)
+	}
+	if name != "test" {
+		t.Errorf("unexpected name value: %s", name)
+	}
+}
+
+func TestInsertCommands(t *testing.T) {
+	db, _ := generateTestDB()
+
+	migrations := DBMigrations{
+		Migrations: []DBMigration{
+			{Version: 1, Stmts: CurrentSchema()},
+		},
+	}
+
+	var (
+		err      error
+		filename string
+	)
+
+	_, filename, err = generateTestConfig()
+	if err != nil {
+		t.Errorf("failed to generate test config: %v", err)
+	}
+
+	err = RunMigrations(db, filename, &migrations)
+	if err != nil {
+		t.Errorf("failed to run migrations: %v", err)
+	}
+
+	err = InsertCommands(db, []Command{
+		{Name: "test"},
+	})
+	if err != nil {
+		t.Errorf("failed to insert commands: %v", err)
+	}
+
+	res := db.QueryRow("SELECT name FROM command")
+	var name string
+	err = res.Scan(&name)
 	if err != nil {
 		t.Errorf("failed to scan name value: %v", err)
 	}
