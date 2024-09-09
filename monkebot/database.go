@@ -59,18 +59,18 @@ func CurrentSchema() []string {
 	return []string{
 		// DDL
 		`CREATE TABLE user (
-			id INT NOT NULL PRIMARY KEY AUTOINCREMENT,
+			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT
 		)`,
 		`CREATE TABLE user_platform (
 			user_id INT NOT NULL,
 			platform TEXT NOT NULL,
 			bot_is_joined BOOL NOT NULL DEFAULT false,
 			PRIMARY KEY (user_id, platform),
-			FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+			FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
 			FOREIGN KEY (platform) REFERENCES platform(name) ON DELETE CASCADE
 		)`,
 		`CREATE TABLE platform (
-			name TEXT NOT NULL PRIMARY KEY,
+			name TEXT NOT NULL PRIMARY KEY
 		)`,
 
 		// DML
@@ -98,17 +98,17 @@ func RunMigrations(db *sql.DB, configPath string, migrations *DBMigrations) erro
 	migrationsApplied := 0
 	currentVersion := config.DBConfig.Version
 	for _, migration := range migrations.Migrations {
-		if currentVersion < migration.Version {
+		if currentVersion >= migration.Version {
 			continue
 		}
 
 		for _, stmt := range migration.Stmts {
 			_, err = tx.Exec(stmt)
-			migrationsApplied++
 			if err != nil {
 				return fmt.Errorf("failed to execute migration: %w", err)
 			}
 		}
+		migrationsApplied++
 
 		// version 1 creates the database from scratch so there's no need to run the other migrations,
 		// and we can just update the version to the latest one.
@@ -127,7 +127,7 @@ func RunMigrations(db *sql.DB, configPath string, migrations *DBMigrations) erro
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
-	config.DBConfig.Version = currentVersion
+	config.DBConfig.Version = migrations.Migrations[len(migrations.Migrations)-1].Version
 	err = SaveConfigToFile(config, configPath)
 	if err != nil {
 		return fmt.Errorf("failed to update schema version to %d, please do so manually in the config file: %w", currentVersion, err)
