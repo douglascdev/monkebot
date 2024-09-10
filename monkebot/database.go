@@ -153,10 +153,8 @@ func RunMigrations(tx *sql.Tx, config *Config, migrations *DBMigrations) error {
 	// migrations to be applied sequentially until the currentVersion
 	migrationsApplied := 0
 	currentVersion := config.DBConfig.Version
-	for _, migration := range migrations.Migrations {
-		if currentVersion >= migration.Version {
-			continue
-		}
+	for i := currentVersion; i < len(migrations.Migrations); i++ {
+		migration := migrations.Migrations[i]
 
 		for _, stmt := range migration.Stmts {
 			_, err = tx.Exec(stmt)
