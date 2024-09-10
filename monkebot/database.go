@@ -62,7 +62,12 @@ func InitDB(driver string, dataSourceName string, cfgReader io.Reader, cfgWriter
 		return nil, fmt.Errorf("failed to load config: %w", err)
 	}
 
-	err = RunMigrations(db, cfg, &migrations)
+	tx, err := db.Begin()
+	defer tx.Rollback()
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	err = RunMigrations(tx, cfg, &migrations)
 	if err != nil {
 		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
@@ -115,23 +120,16 @@ func CurrentSchema() []string {
 	}
 }
 
-func InsertCommands(db *sql.DB, commands []Command) error {
+func InsertCommands(tx *sql.Tx, commands []Command) error {
 	var (
 		id  int
 		err error
 	)
 	// check if commands were already added(expected to return ErrNoRows)
-	err = db.QueryRow("SELECT id FROM command LIMIT 1").Scan(&id)
+	err = tx.QueryRow("SELECT id FROM command LIMIT 1").Scan(&id)
 	if err != sql.ErrNoRows {
 		return fmt.Errorf("failed to get command: %w", err)
 	}
-
-	var tx *sql.Tx
-	tx, err = db.Begin()
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
-	}
-	defer tx.Rollback()
 
 	for _, command := range commands {
 		_, err = tx.Exec("INSERT INTO command (name) VALUES (?)", command.Name)
@@ -140,26 +138,17 @@ func InsertCommands(db *sql.DB, commands []Command) error {
 		}
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
-	}
-
 	return nil
 }
 
 // Run migrations in the database.
 // If the migration succeeds, the version in DBConfig is updated to the current version
 // and should be saved in the config file.
-func RunMigrations(db *sql.DB, config *Config, migrations *DBMigrations) error {
+func RunMigrations(tx *sql.Tx, config *Config, migrations *DBMigrations) error {
 	// sort migrations by version
 	sort.Sort(migrations)
 
-	tx, err := db.Begin()
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
-	}
-	defer tx.Rollback()
+	var err error
 
 	// migrations to be applied sequentially until the currentVersion
 	migrationsApplied := 0
@@ -187,11 +176,6 @@ func RunMigrations(db *sql.DB, config *Config, migrations *DBMigrations) error {
 
 	if migrationsApplied == 0 {
 		return nil
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	config.DBConfig.Version = migrations.Migrations[len(migrations.Migrations)-1].Version

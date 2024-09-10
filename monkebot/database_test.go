@@ -7,11 +7,25 @@ import (
 	"testing"
 )
 
+var testDB *sql.DB
+
+func init() {
+	var err error
+	testDB, err = generateTestDB()
+	if err != nil {
+		panic(err)
+	}
+}
+
 func generateTestDB() (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", "file:data.db?mode=memory")
+	db, err := sql.Open("sqlite3", "file::memory:?cache=shared")
 	if err != nil {
 		return nil, err
 	}
+	// pragmas that should speed up sqlite for testing
+	db.Exec("PRAGMA synchronous = OFF;")
+	db.Exec("PRAGMA journal_mode = MEMORY;")
+	db.Exec("PRAGMA temp_store = MEMORY;")
 	return db, nil
 }
 
@@ -76,8 +90,6 @@ func TestInitDB(t *testing.T) {
 }
 
 func TestRunMigrationsCurrentSchema(t *testing.T) {
-	db, _ := generateTestDB()
-
 	migrations := DBMigrations{
 		Migrations: []DBMigration{
 			{Version: 1, Stmts: CurrentSchema()},
@@ -93,11 +105,16 @@ func TestRunMigrationsCurrentSchema(t *testing.T) {
 	if err != nil {
 		t.Errorf("failed to generate test config: %v", err)
 	}
-	err = RunMigrations(db, cfg, &migrations)
+	tx, err := testDB.Begin()
+	defer tx.Rollback()
+	if err != nil {
+		t.Errorf("failed to begin transaction: %v", err)
+	}
+	err = RunMigrations(tx, cfg, &migrations)
 	if err != nil {
 		t.Errorf("failed to run migrations with current schema: %v", err)
 	}
-	res := db.QueryRow("SELECT id, name FROM platform")
+	res := tx.QueryRow("SELECT id, name FROM platform")
 
 	var (
 		id       int
@@ -113,8 +130,6 @@ func TestRunMigrationsCurrentSchema(t *testing.T) {
 }
 
 func TestRunMigrationsCurrentSchemaAndNewMigrations(t *testing.T) {
-	db, _ := generateTestDB()
-
 	migrations := DBMigrations{
 		Migrations: []DBMigration{
 			{Version: 1, Stmts: CurrentSchema()},
@@ -136,7 +151,13 @@ func TestRunMigrationsCurrentSchemaAndNewMigrations(t *testing.T) {
 	if err != nil {
 		t.Errorf("failed to generate test config: %v", err)
 	}
-	err = RunMigrations(db, cfg, &migrations)
+
+	tx, err := testDB.Begin()
+	defer tx.Rollback()
+	if err != nil {
+		t.Errorf("failed to begin transaction: %v", err)
+	}
+	err = RunMigrations(tx, cfg, &migrations)
 	if err != nil {
 		t.Errorf("failed to run migrations with current schema: %v", err)
 	}
@@ -147,8 +168,6 @@ func TestRunMigrationsCurrentSchemaAndNewMigrations(t *testing.T) {
 }
 
 func TestRunMigrationsNewMigrations(t *testing.T) {
-	db, _ := generateTestDB()
-
 	migrations := DBMigrations{
 		Migrations: []DBMigration{
 			{Version: 1, Stmts: CurrentSchema()},
@@ -166,18 +185,24 @@ func TestRunMigrationsNewMigrations(t *testing.T) {
 		err error
 	)
 
+	tx, err := testDB.Begin()
+	defer tx.Rollback()
+	if err != nil {
+		t.Errorf("failed to begin transaction: %v", err)
+	}
+
 	cfg, err = generateTestConfig()
 	if err != nil {
 		t.Errorf("failed to generate test config: %v", err)
 	}
-	_, err = db.Exec("CREATE TABLE test (id INTEGER PRIMARY KEY, name TEXT NOT NULL)")
+	_, err = tx.Exec("CREATE TABLE test (id INTEGER PRIMARY KEY, name TEXT NOT NULL)")
 	if err != nil {
 		t.Errorf("failed to create test table: %v", err)
 	}
 
 	cfg.DBConfig.Version = 2
 
-	err = RunMigrations(db, cfg, &migrations)
+	err = RunMigrations(tx, cfg, &migrations)
 	if err != nil {
 		t.Errorf("failed to run migrations: %v", err)
 	}
@@ -186,7 +211,7 @@ func TestRunMigrationsNewMigrations(t *testing.T) {
 		t.Errorf("expected version 3, got %d", cfg.DBConfig.Version)
 	}
 
-	res := db.QueryRow("SELECT id, name FROM test")
+	res := tx.QueryRow("SELECT id, name FROM test")
 	var (
 		id   int
 		name string
@@ -201,8 +226,6 @@ func TestRunMigrationsNewMigrations(t *testing.T) {
 }
 
 func TestInsertCommands(t *testing.T) {
-	db, _ := generateTestDB()
-
 	migrations := DBMigrations{
 		Migrations: []DBMigration{
 			{Version: 1, Stmts: CurrentSchema()},
@@ -219,19 +242,24 @@ func TestInsertCommands(t *testing.T) {
 		t.Errorf("failed to generate test config: %v", err)
 	}
 
-	err = RunMigrations(db, cfg, &migrations)
+	tx, err := testDB.Begin()
+	defer tx.Rollback()
+	if err != nil {
+		t.Errorf("failed to begin transaction: %v", err)
+	}
+	err = RunMigrations(tx, cfg, &migrations)
 	if err != nil {
 		t.Errorf("failed to run migrations: %v", err)
 	}
 
-	err = InsertCommands(db, []Command{
+	err = InsertCommands(tx, []Command{
 		{Name: "test"},
 	})
 	if err != nil {
 		t.Errorf("failed to insert commands: %v", err)
 	}
 
-	res := db.QueryRow("SELECT name FROM command")
+	res := tx.QueryRow("SELECT name FROM command")
 	var name string
 	err = res.Scan(&name)
 	if err != nil {
