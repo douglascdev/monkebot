@@ -115,6 +115,7 @@ func CurrentSchema() []string {
 			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 			name TEXT NOT NULL
 		)`,
+		`CREATE INDEX idx_name ON command(name)`,
 		`CREATE TABLE user_platform_command (
 			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 			user_id TEXT NOT NULL,
@@ -123,9 +124,7 @@ func CurrentSchema() []string {
 			is_enabled BOOL NOT NULL DEFAULT true,
 			FOREIGN KEY (user_id, platform_id, command_id) REFERENCES user_platform(user_id, platform_id, command_id) ON DELETE CASCADE
 		)`,
-		`
-		CREATE INDEX idx_is_enabled ON user_platform_command(is_enabled)
-		`,
+		`CREATE INDEX idx_is_enabled ON user_platform_command(is_enabled)`,
 
 		// DML
 		`INSERT INTO platform (name) VALUES ('twitch')`,
