@@ -120,8 +120,12 @@ func CurrentSchema() []string {
 			user_id TEXT NOT NULL,
 			command_id INTEGER NOT NULL,
 			platform_id INTEGER NOT NULL,
+			is_enabled BOOL NOT NULL DEFAULT true,
 			FOREIGN KEY (user_id, platform_id, command_id) REFERENCES user_platform(user_id, platform_id, command_id) ON DELETE CASCADE
 		)`,
+		`
+		CREATE INDEX idx_is_enabled ON user_platform_command(is_enabled)
+		`,
 
 		// DML
 		`INSERT INTO platform (name) VALUES ('twitch')`,
