@@ -89,7 +89,15 @@ func CurrentSchema() []string {
 	return []string{
 		// DDL
 		`CREATE TABLE user (
-			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT
+			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+			permission_id INTEGER NOT NULL,
+			FOREIGN KEY (permission_id) REFERENCES permission(id)
+		)`,
+		`CREATE TABLE permission (
+			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL,
+			is_ignored BOOL NOT NULL DEFAULT false,
+			is_bot_admin BOOL NOT NULL DEFAULT false
 		)`,
 		`CREATE TABLE user_platform (
 			user_id TEXT NOT NULL,
@@ -117,6 +125,9 @@ func CurrentSchema() []string {
 
 		// DML
 		`INSERT INTO platform (name) VALUES ('twitch')`,
+
+		`INSERT INTO permission (name, is_ignored) VALUES ('banned', true)`,
+		`INSERT INTO permission (name, is_bot_admin) VALUES ('admin', true)`,
 	}
 }
 
