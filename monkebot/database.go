@@ -107,6 +107,7 @@ func CurrentSchema() []string {
 			FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
 			FOREIGN KEY (platform_id) REFERENCES platform(id) ON DELETE CASCADE
 		)`,
+		`CREATE INDEX idx_bot_is_joined ON user_platform(bot_is_joined)`,
 		`CREATE TABLE platform (
 			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 			name TEXT NOT NULL
