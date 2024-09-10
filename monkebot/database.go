@@ -130,6 +130,7 @@ func CurrentSchema() []string {
 		// DML
 		`INSERT INTO platform (name) VALUES ('twitch')`,
 
+		`INSERT INTO permission (name) VALUES ('user')`,
 		`INSERT INTO permission (name, is_ignored) VALUES ('banned', true)`,
 		`INSERT INTO permission (name, is_bot_admin) VALUES ('admin', true)`,
 	}
