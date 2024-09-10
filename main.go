@@ -56,23 +56,23 @@ func main() {
 	}
 
 	if err != nil {
-		log.Fatal().Err(err)
+		log.Fatal().Err(err).Msg("failed to stat config file")
 	}
 
 	var cfg *monkebot.Config
 	cfg, err = monkebot.LoadConfigFromFile(*cfgPath)
 	if err != nil {
-		log.Fatal().Err(err)
+		log.Fatal().Err(err).Msg("failed to load config file")
 	}
 
 	var mb *monkebot.Monkebot
 	mb, err = monkebot.NewMonkebot(*cfg)
 	if err != nil {
-		log.Fatal().Err(err)
+		log.Fatal().Err(err).Msg("failed to initialize monkebot")
 	}
 
 	err = mb.Connect()
 	if err != nil {
-		log.Fatal().Err(err)
+		log.Fatal().Err(err).Msg("failed to connect to Twitch")
 	}
 }

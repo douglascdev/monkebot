@@ -30,7 +30,7 @@ func LoadConfig(JSONData []byte) (*Config, error) {
 
 	err := json.Unmarshal(JSONData, &cfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal config template: %v", err)
+		return nil, fmt.Errorf("failed to unmarshal config template: %w", err)
 	}
 
 	fields := reflect.ValueOf(&cfg).Elem()
@@ -86,7 +86,7 @@ func ConfigTemplateJSON() ([]byte, error) {
 
 	jsonBytes, err := json.MarshalIndent(cfg, "", "  ")
 	if err != nil {
-		return nil, fmt.Errorf("error marshalling template JSON: %v", err)
+		return nil, fmt.Errorf("error marshalling template JSON: %w", err)
 	}
 	return jsonBytes, nil
 }
