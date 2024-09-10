@@ -1,8 +1,9 @@
 package monkebot
 
 import (
+	"bytes"
 	"database/sql"
-	"os"
+	"io"
 	"testing"
 )
 
@@ -14,33 +15,64 @@ func generateTestDB() (*sql.DB, error) {
 	return db, nil
 }
 
-func generateTestConfig() (*Config, string, error) {
-	tempFile, err := os.CreateTemp(os.TempDir(), "monkebotTestJson")
-	if err != nil {
-		return nil, "", err
-	}
+func generateTestConfig() (*Config, error) {
 	template, err := ConfigTemplateJSON()
 	if err != nil {
-		return nil, "", err
-	}
-	err = os.WriteFile(tempFile.Name(), template, 0644)
-	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 	var cfg *Config
-	cfg, err = LoadConfigFromFile(tempFile.Name())
+	cfg, err = LoadConfig(template)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
-	return cfg, tempFile.Name(), nil
+	return cfg, nil
 }
 
-func TestInitDB(t *testing.T) {
+func TestGenerateTestDB(t *testing.T) {
 	db, err := generateTestDB()
 	if err != nil {
 		t.Errorf("failed to init test database: %v", err)
 	}
 	defer db.Close()
+}
+
+func TestInitDB(t *testing.T) {
+	cfg, err := generateTestConfig()
+	if err != nil {
+		t.Errorf("failed to generate test config: %v", err)
+	}
+	cfg.DBConfig.Version = 0
+
+	var (
+		reader = new(bytes.Buffer)
+		writer = new(bytes.Buffer)
+		data   []byte
+	)
+
+	data, err = MarshalConfig(cfg)
+	if err != nil {
+		t.Errorf("failed to marshal test config: %v", err)
+	}
+	reader.Write(data)
+
+	db, err := InitDB("sqlite3", "file:data.db?mode=memory", reader, writer)
+	if err != nil {
+		t.Errorf("failed to run InitDB: %v", err)
+	}
+	defer db.Close()
+
+	data, err = io.ReadAll(writer)
+	if err != nil {
+		t.Errorf("failed to read written config: %v", err)
+	}
+
+	cfg, err = LoadConfig(data)
+	if err != nil {
+		t.Errorf("failed to load written config: %v", err)
+	}
+	if cfg.DBConfig.Version != 1 {
+		t.Errorf("migration failed to update database version, expected 1, got %d", cfg.DBConfig.Version)
+	}
 }
 
 func TestRunMigrationsCurrentSchema(t *testing.T) {
@@ -53,15 +85,15 @@ func TestRunMigrationsCurrentSchema(t *testing.T) {
 	}
 
 	var (
-		err      error
-		filename string
+		cfg *Config
+		err error
 	)
 
-	_, filename, err = generateTestConfig()
+	cfg, err = generateTestConfig()
 	if err != nil {
 		t.Errorf("failed to generate test config: %v", err)
 	}
-	err = RunMigrations(db, filename, &migrations)
+	err = RunMigrations(db, cfg, &migrations)
 	if err != nil {
 		t.Errorf("failed to run migrations with current schema: %v", err)
 	}
@@ -96,24 +128,19 @@ func TestRunMigrationsCurrentSchemaAndNewMigrations(t *testing.T) {
 	}
 
 	var (
-		err      error
-		filename string
+		cfg *Config
+		err error
 	)
 
-	_, filename, err = generateTestConfig()
+	cfg, err = generateTestConfig()
 	if err != nil {
 		t.Errorf("failed to generate test config: %v", err)
 	}
-	err = RunMigrations(db, filename, &migrations)
+	err = RunMigrations(db, cfg, &migrations)
 	if err != nil {
 		t.Errorf("failed to run migrations with current schema: %v", err)
 	}
 
-	var cfg *Config
-	cfg, err = LoadConfigFromFile(filename)
-	if err != nil {
-		t.Errorf("failed to load config: %v", err)
-	}
 	if cfg.DBConfig.Version != 3 {
 		t.Errorf("expected version 3, got %d", cfg.DBConfig.Version)
 	}
@@ -135,12 +162,11 @@ func TestRunMigrationsNewMigrations(t *testing.T) {
 	}
 
 	var (
-		cfg      *Config
-		err      error
-		filename string
+		cfg *Config
+		err error
 	)
 
-	cfg, filename, err = generateTestConfig()
+	cfg, err = generateTestConfig()
 	if err != nil {
 		t.Errorf("failed to generate test config: %v", err)
 	}
@@ -150,25 +176,17 @@ func TestRunMigrationsNewMigrations(t *testing.T) {
 	}
 
 	cfg.DBConfig.Version = 2
-	err = SaveConfigToFile(cfg, filename)
-	if err != nil {
-		t.Errorf("failed to save config: %v", err)
-	}
 
-	err = RunMigrations(db, filename, &migrations)
+	err = RunMigrations(db, cfg, &migrations)
 	if err != nil {
 		t.Errorf("failed to run migrations: %v", err)
 	}
 
-	cfg, err = LoadConfigFromFile(filename)
-	if err != nil {
-		t.Errorf("failed to load config: %v", err)
-	}
 	if cfg.DBConfig.Version != 3 {
 		t.Errorf("expected version 3, got %d", cfg.DBConfig.Version)
 	}
 
-	res := db.QueryRow("SELECT * FROM test")
+	res := db.QueryRow("SELECT id, name FROM test")
 	var (
 		id   int
 		name string
@@ -192,16 +210,16 @@ func TestInsertCommands(t *testing.T) {
 	}
 
 	var (
-		err      error
-		filename string
+		cfg *Config
+		err error
 	)
 
-	_, filename, err = generateTestConfig()
+	cfg, err = generateTestConfig()
 	if err != nil {
 		t.Errorf("failed to generate test config: %v", err)
 	}
 
-	err = RunMigrations(db, filename, &migrations)
+	err = RunMigrations(db, cfg, &migrations)
 	if err != nil {
 		t.Errorf("failed to run migrations: %v", err)
 	}

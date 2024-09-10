@@ -2,7 +2,6 @@ package monkebot
 
 import (
 	"fmt"
-	"os"
 	"testing"
 )
 
@@ -42,27 +41,20 @@ func TestLoadConfig(t *testing.T) {
 	}
 }
 
-func TestLoadConfigFromFile(t *testing.T) {
-	file, err := os.CreateTemp(os.TempDir(), "monkebotTestJson")
-	if err != nil {
-		t.Errorf("failed to create temp file: %v", err)
-	}
-	defer file.Close()
-
+func TestMarshalConfig(t *testing.T) {
 	mockJSONBytes, err := ConfigTemplateJSON()
 	if err != nil {
 		t.Errorf("failed to generate config template: %v", err)
 	}
-	file.WriteString(string(mockJSONBytes))
 
-	config, err := LoadConfigFromFile(file.Name())
+	cfg, err := LoadConfig(mockJSONBytes)
 	if err != nil {
-		t.Errorf("failed to load config from file: %v", err)
+		t.Errorf("failed to load config: %v", err)
 	}
 
-	err = validateTemplateJSONConfig(config)
+	_, err = MarshalConfig(cfg)
 	if err != nil {
-		t.Errorf("failed to validate config: %v", err)
+		t.Errorf("failed to marshal config: %v", err)
 	}
 }
 

@@ -3,6 +3,7 @@ package monkebot
 import (
 	"database/sql"
 	"fmt"
+	"io"
 	"sort"
 
 	_ "github.com/ncruces/go-sqlite3/driver"
@@ -31,7 +32,8 @@ func (m *DBMigrations) Less(i, j int) bool {
 	return m.Migrations[i].Version < m.Migrations[j].Version
 }
 
-func InitDB(driver string, dataSourceName string, configPath string) (*sql.DB, error) {
+// Initialize the database, run needed migrations and update database config to the latest version if the miggrations succeed
+func InitDB(driver string, dataSourceName string, cfgReader io.Reader, cfgWriter io.Writer) (*sql.DB, error) {
 	db, err := sql.Open(driver, dataSourceName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
@@ -47,9 +49,32 @@ func InitDB(driver string, dataSourceName string, configPath string) (*sql.DB, e
 			{Version: 1, Stmts: CurrentSchema()},
 		},
 	}
-	err = RunMigrations(db, configPath, &migrations)
+
+	var cfg *Config
+	var data []byte
+	data, err = io.ReadAll(cfgReader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read config: %w", err)
+	}
+
+	cfg, err = LoadConfig(data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load config: %w", err)
+	}
+
+	err = RunMigrations(db, cfg, &migrations)
 	if err != nil {
 		return nil, fmt.Errorf("failed to run migrations: %w", err)
+	}
+
+	latestVer := migrations.Migrations[len(migrations.Migrations)-1].Version
+	data, err = MarshalConfig(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal config, update your config to %d manually. Error: %w", latestVer, err)
+	}
+	_, err = cfgWriter.Write(data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write config, update your config to %d manually. Error: %w", latestVer, err)
 	}
 
 	return db, nil
@@ -124,15 +149,12 @@ func InsertCommands(db *sql.DB, commands []Command) error {
 }
 
 // Run migrations in the database.
-// If the migration succeeds, the version in DBConfig is updated to the current version.
-func RunMigrations(db *sql.DB, configPath string, migrations *DBMigrations) error {
+// If the migration succeeds, the version in DBConfig is updated to the current version
+// and should be saved in the config file.
+func RunMigrations(db *sql.DB, config *Config, migrations *DBMigrations) error {
 	// sort migrations by version
 	sort.Sort(migrations)
 
-	config, err := LoadConfigFromFile(configPath)
-	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
-	}
 	tx, err := db.Begin()
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
@@ -173,9 +195,5 @@ func RunMigrations(db *sql.DB, configPath string, migrations *DBMigrations) erro
 	}
 
 	config.DBConfig.Version = migrations.Migrations[len(migrations.Migrations)-1].Version
-	err = SaveConfigToFile(config, configPath)
-	if err != nil {
-		return fmt.Errorf("failed to update schema version to %d, please do so manually in the config file: %w", currentVersion, err)
-	}
 	return nil
 }

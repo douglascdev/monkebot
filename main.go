@@ -59,8 +59,15 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to stat config file")
 	}
 
-	var cfg *monkebot.Config
-	cfg, err = monkebot.LoadConfigFromFile(*cfgPath)
+	var (
+		cfg  *monkebot.Config
+		data []byte
+	)
+	data, err = os.ReadFile(*cfgPath)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to read config file")
+	}
+	cfg, err = monkebot.LoadConfig(data)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to load config file")
 	}

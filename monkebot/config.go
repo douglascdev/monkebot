@@ -3,7 +3,6 @@ package monkebot
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"reflect"
 )
 
@@ -43,30 +42,12 @@ func LoadConfig(JSONData []byte) (*Config, error) {
 	return &cfg, nil
 }
 
-func LoadConfigFromFile(filename string) (*Config, error) {
-	bytes, err := os.ReadFile(filename)
+func MarshalConfig(cfg *Config) ([]byte, error) {
+	jsonBytes, err := json.MarshalIndent(cfg, "", "  ")
 	if err != nil {
-		return nil, fmt.Errorf("failed to open config file: %w", err)
+		return nil, fmt.Errorf("error marshalling config: %w", err)
 	}
-
-	config, err := LoadConfig(bytes)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse config file: %w", err)
-	}
-
-	return config, nil
-}
-
-func SaveConfigToFile(config *Config, filename string) error {
-	jsonBytes, err := json.MarshalIndent(config, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal config: %w", err)
-	}
-	err = os.WriteFile(filename, jsonBytes, 0644)
-	if err != nil {
-		return fmt.Errorf("failed to write config file: %w", err)
-	}
-	return nil
+	return jsonBytes, nil
 }
 
 func ConfigTemplateJSON() ([]byte, error) {
