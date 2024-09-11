@@ -101,10 +101,10 @@ func CurrentSchema() []string {
 			is_bot_admin BOOL NOT NULL DEFAULT false
 		)`,
 		`CREATE TABLE user_platform (
-			user_id TEXT NOT NULL,
+			id TEXT NOT NULL PRIMARY KEY,
+			user_id INTEGER NOT NULL,
 			platform_id INTEGER NOT NULL,
 			bot_is_joined BOOL NOT NULL DEFAULT false,
-			PRIMARY KEY (user_id, platform_id),
 			FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
 			FOREIGN KEY (platform_id) REFERENCES platform(id) ON DELETE CASCADE
 		)`,
@@ -165,7 +165,7 @@ func InsertCommands(tx *sql.Tx, commands []Command) error {
 
 // Users that already exist will be ignored.
 // All PlatformUsers must belong to the same platform.
-func InsertUsers(tx *sql.Tx, joinBot bool, users ...PlatformUser) error {
+func InsertUsers(tx *sql.Tx, joinBot bool, platformUsers ...*PlatformUser) error {
 	var (
 		row *sql.Row
 		err error
@@ -173,7 +173,7 @@ func InsertUsers(tx *sql.Tx, joinBot bool, users ...PlatformUser) error {
 
 	// find twitch platform id
 	var platformID int
-	row = tx.QueryRow("SELECT id FROM platform WHERE name = ?", users[0].Platform.Name)
+	row = tx.QueryRow("SELECT id FROM platform WHERE name = ?", platformUsers[0].Platform.Name)
 	err = row.Scan(&platformID)
 	if err != nil {
 		return fmt.Errorf("failed to find twitch platform: %w", err)
@@ -196,7 +196,7 @@ func InsertUsers(tx *sql.Tx, joinBot bool, users ...PlatformUser) error {
 
 	// prepare user_platform insert
 	var userPlatformInsertStmt *sql.Stmt
-	userPlatformInsertStmt, err = tx.Prepare("INSERT INTO user_platform (user_id, platform_id, bot_is_joined) VALUES (?, ?, ?)")
+	userPlatformInsertStmt, err = tx.Prepare("INSERT INTO user_platform (id, user_id, platform_id, bot_is_joined) VALUES (?, ?, ?, ?)")
 	if err != nil {
 		return fmt.Errorf("failed to prepare user_platform insert: %w", err)
 	}
@@ -206,22 +206,56 @@ func InsertUsers(tx *sql.Tx, joinBot bool, users ...PlatformUser) error {
 		result sql.Result
 		userID int64
 	)
-	for _, user := range users {
+	for _, platformUser := range platformUsers {
 		result, err = userInsertStmt.Exec(userPermissionID)
 		if err != nil {
-			log.Err(err).Str("name", user.Name).Msg("skipping insertion for user")
+			log.Err(err).Str("name", platformUser.Name).Msg("skipping insertion for user")
 			continue
 		}
 		userID, err = result.LastInsertId()
 		if err != nil {
 			return fmt.Errorf("failed to get inserted user's id")
 		}
-		result, err = userPlatformInsertStmt.Exec(userID, platformID, joinBot)
+		result, err = userPlatformInsertStmt.Exec(platformUser.ID, userID, platformID, joinBot)
 		if err != nil {
 			return fmt.Errorf("failed to insert user_platform")
 		}
-		log.Info().Int64("user_id", userID).Str("name", user.Name).Msg("inserted new user")
+		platformUser.PermissionID = int64(userPermissionID)
+		log.Info().Int64("user_id", userID).Str("name", platformUser.Name).Msg("inserted new user")
 	}
+	return nil
+}
+
+func UpdateUserPermission(tx *sql.Tx, permissionName string, platformUser *PlatformUser) error {
+	var (
+		err    error
+		userID string
+	)
+
+	err = tx.QueryRow(`
+		SELECT u.id FROM user u
+		INNER JOIN user_platform up ON u.id = up.user_id
+		WHERE up.id = ?
+	`, platformUser.ID).Scan(&userID)
+	if err != nil {
+		return fmt.Errorf("failed to find user id for %s: %w", platformUser.Name, err)
+	}
+
+	var newPermID int64
+	err = tx.QueryRow(`
+		SELECT id FROM permission p WHERE p.name = ?
+	`, permissionName).Scan(&newPermID)
+	if err != nil {
+		return fmt.Errorf("failed to find id for permission %s: %w", permissionName, err)
+	}
+
+	_, err = tx.Exec("UPDATE user SET permission_id = ? WHERE id = ?", newPermID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to update user %s: %w", platformUser.Name, err)
+	}
+
+	platformUser.PermissionID = newPermID
+
 	return nil
 }
 

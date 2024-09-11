@@ -293,12 +293,54 @@ func TestInsertUsers(t *testing.T) {
 		t.Errorf("failed to run migrations: %v", err)
 	}
 
-	users := []PlatformUser{
-		{Platform: Platform{ID: 1, Name: "twitch"}, ID: "test", Name: "test"},
+	err = InsertUsers(
+		tx,
+		false,
+		&PlatformUser{
+			Platform: Platform{ID: 0, Name: "twitch"},
+			User:     User{ID: 0, PermissionID: 0},
+			ID:       "test",
+			Name:     "test",
+		},
+	)
+	if err != nil {
+		t.Errorf("failed to insert users: %v", err)
+	}
+}
+
+func TestUpdateUserPermission(t *testing.T) {
+	tx, err := testDB.Begin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+
+	migrations := DBMigrations{
+		Migrations: []DBMigration{
+			{Version: 1, Stmts: CurrentSchema()},
+		},
+	}
+
+	cfg, err := generateTestConfig()
+	if err != nil {
+		t.Errorf("failed to generate test config: %v", err)
+	}
+	err = RunMigrations(tx, cfg, &migrations)
+	if err != nil {
+		t.Errorf("failed to run migrations: %v", err)
+	}
+
+	users := []*PlatformUser{
+		{Platform: Platform{Name: "twitch"}, User: User{ID: 0, PermissionID: 0}, ID: "test", Name: "test"},
 	}
 
 	err = InsertUsers(tx, false, users...)
 	if err != nil {
-		t.Errorf("failed to insert users: %v", err)
+		t.Fatalf("failed to insert users: %v", err)
+	}
+
+	err = UpdateUserPermission(tx, "admin", users[0])
+	if err != nil {
+		t.Fatalf("failed to update user: %v", err)
 	}
 }

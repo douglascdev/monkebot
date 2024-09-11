@@ -9,6 +9,11 @@ type PlatformClient interface {
 	Connect() error
 }
 
+type User struct {
+	ID           int
+	PermissionID int64
+}
+
 type Platform struct {
 	ID   int
 	Name string
@@ -16,6 +21,7 @@ type Platform struct {
 
 type PlatformUser struct {
 	Platform
+	User
 	ID   string
 	Name string
 }
