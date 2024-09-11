@@ -269,3 +269,36 @@ func TestInsertCommands(t *testing.T) {
 		t.Errorf("unexpected name value: %s", name)
 	}
 }
+
+func TestInsertUsers(t *testing.T) {
+	tx, err := testDB.Begin()
+	if err != nil {
+		t.Errorf("failed to begin transaction: %v", err)
+	}
+	defer tx.Rollback()
+
+	// initial schema inserts are needed to test user insertions
+	migrations := DBMigrations{
+		Migrations: []DBMigration{
+			{Version: 1, Stmts: CurrentSchema()},
+		},
+	}
+
+	cfg, err := generateTestConfig()
+	if err != nil {
+		t.Errorf("failed to generate test config: %v", err)
+	}
+	err = RunMigrations(tx, cfg, &migrations)
+	if err != nil {
+		t.Errorf("failed to run migrations: %v", err)
+	}
+
+	users := []PlatformUser{
+		{Platform: Platform{ID: 1, Name: "twitch"}, ID: "test", Name: "test"},
+	}
+
+	err = InsertUsers(tx, false, users...)
+	if err != nil {
+		t.Errorf("failed to insert users: %v", err)
+	}
+}

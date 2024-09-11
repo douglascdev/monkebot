@@ -8,6 +8,7 @@ import (
 
 	_ "github.com/ncruces/go-sqlite3/driver"
 	_ "github.com/ncruces/go-sqlite3/embed"
+	"github.com/rs/zerolog/log"
 )
 
 type DBMigration struct {
@@ -159,6 +160,68 @@ func InsertCommands(tx *sql.Tx, commands []Command) error {
 		}
 	}
 
+	return nil
+}
+
+// Users that already exist will be ignored.
+// All PlatformUsers must belong to the same platform.
+func InsertUsers(tx *sql.Tx, joinBot bool, users ...PlatformUser) error {
+	var (
+		row *sql.Row
+		err error
+	)
+
+	// find twitch platform id
+	var platformID int
+	row = tx.QueryRow("SELECT id FROM platform WHERE name = ?", users[0].Platform.Name)
+	err = row.Scan(&platformID)
+	if err != nil {
+		return fmt.Errorf("failed to find twitch platform: %w", err)
+	}
+
+	// find user permission id
+	var userPermissionID int
+	row = tx.QueryRow("SELECT id FROM permission WHERE name = ?", "user")
+	err = row.Scan(&userPermissionID)
+	if err != nil {
+		return fmt.Errorf("failed to find user permission: %w", err)
+	}
+
+	// prepare user insert
+	var userInsertStmt *sql.Stmt
+	userInsertStmt, err = tx.Prepare("INSERT INTO user (permission_id) VALUES (?)")
+	if err != nil {
+		return fmt.Errorf("failed to prepare user insert: %w", err)
+	}
+
+	// prepare user_platform insert
+	var userPlatformInsertStmt *sql.Stmt
+	userPlatformInsertStmt, err = tx.Prepare("INSERT INTO user_platform (user_id, platform_id, bot_is_joined) VALUES (?, ?, ?)")
+	if err != nil {
+		return fmt.Errorf("failed to prepare user_platform insert: %w", err)
+	}
+
+	// insert users
+	var (
+		result sql.Result
+		userID int64
+	)
+	for _, user := range users {
+		result, err = userInsertStmt.Exec(userPermissionID)
+		if err != nil {
+			log.Err(err).Str("name", user.Name).Msg("skipping insertion for user")
+			continue
+		}
+		userID, err = result.LastInsertId()
+		if err != nil {
+			return fmt.Errorf("failed to get inserted user's id")
+		}
+		result, err = userPlatformInsertStmt.Exec(userID, platformID, joinBot)
+		if err != nil {
+			return fmt.Errorf("failed to insert user_platform")
+		}
+		log.Info().Int64("user_id", userID).Str("name", user.Name).Msg("inserted new user")
+	}
 	return nil
 }
 
