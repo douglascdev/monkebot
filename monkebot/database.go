@@ -137,6 +137,25 @@ func CurrentSchema() []string {
 	}
 }
 
+func SelectIsUserIgnored(tx *sql.Tx, platformUser *PlatformUser) (bool, error) {
+	var (
+		err       error
+		isIgnored bool
+	)
+
+	err = tx.QueryRow(`
+		SELECT p.is_ignored FROM permission p
+		INNER JOIN user_platform up ON up.user_id = u.id
+		INNER JOIN user u ON u.permission_id = p.id
+		WHERE up.platform_id = ? AND up.id = ?
+	`, platformUser.Platform.ID, platformUser.ID).Scan(&isIgnored)
+	if err != nil {
+		return false, err
+	}
+
+	return isIgnored, nil
+}
+
 func InsertCommands(tx *sql.Tx, commands []Command) error {
 	var (
 		id  int

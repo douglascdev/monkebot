@@ -344,3 +344,85 @@ func TestUpdateUserPermission(t *testing.T) {
 		t.Fatalf("failed to update user: %v", err)
 	}
 }
+
+func TestSelectIsUserIgnored(t *testing.T) {
+	tx, err := testDB.Begin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+
+	migrations := DBMigrations{
+		Migrations: []DBMigration{
+			{Version: 1, Stmts: CurrentSchema()},
+		},
+	}
+
+	cfg, err := generateTestConfig()
+	if err != nil {
+		t.Fatalf("failed to generate test config: %v", err)
+	}
+	err = RunMigrations(tx, cfg, &migrations)
+	if err != nil {
+		t.Fatalf("failed to run migrations: %v", err)
+	}
+
+	var bannedPermissionID int
+	err = tx.QueryRow("SELECT id FROM permission WHERE name = 'banned'").Scan(&bannedPermissionID)
+	if err != nil {
+		t.Fatalf("failed to get banned permission id: %v", err)
+	}
+
+	var adminPermissionID int
+	err = tx.QueryRow("SELECT id FROM permission WHERE name = 'admin'").Scan(&adminPermissionID)
+	if err != nil {
+		t.Fatalf("failed to get admin permission id: %v", err)
+	}
+
+	var twitchPlatformID int
+	err = tx.QueryRow("SELECT id FROM platform WHERE name = 'twitch'").Scan(&twitchPlatformID)
+	if err != nil {
+		t.Fatalf("failed to get admin permission id: %v", err)
+	}
+
+	users := []*PlatformUser{
+		{Platform: Platform{ID: twitchPlatformID, Name: "twitch"}, User: User{ID: 1, PermissionID: 0}, ID: "test1", Name: "test"},
+		{Platform: Platform{ID: twitchPlatformID, Name: "twitch"}, User: User{ID: 2, PermissionID: 0}, ID: "test2", Name: "test"},
+	}
+
+	err = InsertUsers(tx, false, users...)
+	if err != nil {
+		t.Fatalf("failed to insert users: %v", err)
+	}
+
+	err = UpdateUserPermission(tx, "banned", users[0])
+	if err != nil {
+		t.Fatalf("failed to update user: %v", err)
+	}
+
+	err = UpdateUserPermission(tx, "admin", users[1])
+	if err != nil {
+		t.Fatalf("failed to update user: %v", err)
+	}
+
+	// ensure banned users are ignored
+	var isIgnored bool
+	isIgnored, err = SelectIsUserIgnored(tx, users[0])
+	if err != nil {
+		t.Fatalf("failed to update user: %v", err)
+	}
+
+	if !isIgnored {
+		t.Fatal("expected banned user to be ignored")
+	}
+
+	// ensure admin users aren't ignored
+	isIgnored, err = SelectIsUserIgnored(tx, users[1])
+	if err != nil {
+		t.Fatalf("failed to update user: %v", err)
+	}
+
+	if isIgnored {
+		t.Fatal("expected admin user to not be ignored")
+	}
+}
