@@ -147,8 +147,13 @@ func InsertCommands(tx *sql.Tx, commands []Command) error {
 		return fmt.Errorf("failed to get command: %w", err)
 	}
 
+	var preparedInsert *sql.Stmt
+	preparedInsert, err = tx.Prepare("INSERT INTO command (name) VALUES (?)")
+	if err != nil {
+		return fmt.Errorf("failed to create prepared insert for commands: %w", err)
+	}
 	for _, command := range commands {
-		_, err = tx.Exec("INSERT INTO command (name) VALUES (?)", command.Name)
+		_, err = preparedInsert.Exec(command.Name)
 		if err != nil {
 			return fmt.Errorf("failed to insert command: %w", err)
 		}
