@@ -24,5 +24,6 @@ go.work.sum
 # env file
 .env
 
-# bot configs
-config.json
+# bot configs and sqlite databases
+*.json
+*.db
