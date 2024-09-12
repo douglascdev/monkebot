@@ -1,6 +1,7 @@
 package monkebot
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -13,13 +14,15 @@ import (
 type Monkebot struct {
 	TwitchClient *twitch.Client
 	Cfg          Config
+	db           *sql.DB
 }
 
-func NewMonkebot(cfg Config) (*Monkebot, error) {
+func NewMonkebot(cfg Config, db *sql.DB) (*Monkebot, error) {
 	client := twitch.NewClient(cfg.Login, "oauth:"+cfg.TwitchToken)
 	mb := &Monkebot{
 		TwitchClient: client,
 		Cfg:          cfg,
+		db:           db,
 	}
 
 	client.OnPrivateMessage(func(message twitch.PrivateMessage) {

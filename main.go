@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"monkebot/monkebot"
 	"os"
@@ -72,8 +73,19 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to load config file")
 	}
 
+	reader := new(bytes.Buffer)
+	reader.Write(data)
+	writer, err := os.OpenFile(*cfgPath, os.O_TRUNC|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to open config file for writing")
+	}
+	db, err := monkebot.InitDB(cfg.DBConfig.Driver, cfg.DBConfig.DataSourceName, reader, writer)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to initialize database")
+	}
+
 	var mb *monkebot.Monkebot
-	mb, err = monkebot.NewMonkebot(*cfg)
+	mb, err = monkebot.NewMonkebot(*cfg, db)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to initialize monkebot")
 	}
