@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"database/sql"
 	"io"
-	"monkebot/client"
 	"monkebot/config"
 	"testing"
 )
@@ -298,9 +297,9 @@ func TestInsertUsers(t *testing.T) {
 	err = InsertUsers(
 		tx,
 		false,
-		&client.PlatformUser{
-			Platform: client.Platform{ID: 0, Name: "twitch"},
-			User:     client.User{ID: 0, PermissionID: 0},
+		&PlatformUser{
+			Platform: Platform{ID: 0, Name: "twitch"},
+			User:     User{ID: 0, PermissionID: 0},
 			ID:       "test",
 			Name:     "test",
 		},
@@ -332,8 +331,8 @@ func TestUpdateUserPermission(t *testing.T) {
 		t.Errorf("failed to run migrations: %v", err)
 	}
 
-	users := []*client.PlatformUser{
-		{Platform: client.Platform{Name: "twitch"}, User: client.User{ID: 0, PermissionID: 0}, ID: "test", Name: "test"},
+	users := []*PlatformUser{
+		{Platform: Platform{Name: "twitch"}, User: User{ID: 0, PermissionID: 0}, ID: "test", Name: "test"},
 	}
 
 	err = InsertUsers(tx, false, users...)
@@ -387,9 +386,9 @@ func TestSelectIsUserIgnored(t *testing.T) {
 		t.Fatalf("failed to get admin permission id: %v", err)
 	}
 
-	users := []*client.PlatformUser{
-		{Platform: client.Platform{ID: twitchPlatformID, Name: "twitch"}, User: client.User{ID: 1, PermissionID: 0}, ID: "test1", Name: "test"},
-		{Platform: client.Platform{ID: twitchPlatformID, Name: "twitch"}, User: client.User{ID: 2, PermissionID: 0}, ID: "test2", Name: "test"},
+	users := []*PlatformUser{
+		{Platform: Platform{ID: twitchPlatformID, Name: "twitch"}, User: User{ID: 1, PermissionID: 0}, ID: "test1", Name: "test"},
+		{Platform: Platform{ID: twitchPlatformID, Name: "twitch"}, User: User{ID: 2, PermissionID: 0}, ID: "test2", Name: "test"},
 	}
 
 	err = InsertUsers(tx, false, users...)

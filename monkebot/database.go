@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
-	"monkebot/client"
 	"monkebot/config"
 	"sort"
 
@@ -139,7 +138,7 @@ func CurrentSchema() []string {
 	}
 }
 
-func SelectIsUserIgnored(tx *sql.Tx, platformUser *client.PlatformUser) (bool, error) {
+func SelectIsUserIgnored(tx *sql.Tx, platformUser *PlatformUser) (bool, error) {
 	var (
 		err       error
 		isIgnored bool
@@ -186,7 +185,7 @@ func InsertCommands(tx *sql.Tx, commands []Command) error {
 
 // Users that already exist will be ignored.
 // All PlatformUsers must belong to the same platform.
-func InsertUsers(tx *sql.Tx, joinBot bool, platformUsers ...*client.PlatformUser) error {
+func InsertUsers(tx *sql.Tx, joinBot bool, platformUsers ...*PlatformUser) error {
 	var (
 		row *sql.Row
 		err error
@@ -247,7 +246,7 @@ func InsertUsers(tx *sql.Tx, joinBot bool, platformUsers ...*client.PlatformUser
 	return nil
 }
 
-func UpdateUserPermission(tx *sql.Tx, permissionName string, platformUser *client.PlatformUser) error {
+func UpdateUserPermission(tx *sql.Tx, permissionName string, platformUser *PlatformUser) error {
 	var (
 		err    error
 		userID string
