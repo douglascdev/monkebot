@@ -3,6 +3,7 @@ package monkebot
 import (
 	"database/sql"
 	"fmt"
+	"monkebot/config"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -13,11 +14,11 @@ import (
 
 type Monkebot struct {
 	TwitchClient *twitch.Client
-	Cfg          Config
+	Cfg          config.Config
 	db           *sql.DB
 }
 
-func NewMonkebot(cfg Config, db *sql.DB) (*Monkebot, error) {
+func NewMonkebot(cfg config.Config, db *sql.DB) (*Monkebot, error) {
 	client := twitch.NewClient(cfg.Login, "oauth:"+cfg.TwitchToken)
 	mb := &Monkebot{
 		TwitchClient: client,

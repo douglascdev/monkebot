@@ -2,6 +2,7 @@ package monkebot
 
 import (
 	"fmt"
+	"monkebot/config"
 	"strings"
 	"time"
 	"unicode"
@@ -155,7 +156,7 @@ func createCommandMap(commands []Command) map[string]Command {
 	return cmdMap
 }
 
-func HandleCommands(message *Message, sender MessageSender, config *Config) error {
+func HandleCommands(message *Message, sender MessageSender, config *config.Config) error {
 	var args []string
 
 	hasPrefix := strings.HasPrefix(message.Message, config.Prefix)

@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"database/sql"
 	"io"
+	"monkebot/client"
+	"monkebot/config"
 	"testing"
 )
 
@@ -29,13 +31,13 @@ func generateTestDB() (*sql.DB, error) {
 	return db, nil
 }
 
-func generateTestConfig() (*Config, error) {
-	template, err := ConfigTemplateJSON()
+func generateTestConfig() (*config.Config, error) {
+	template, err := config.ConfigTemplateJSON()
 	if err != nil {
 		return nil, err
 	}
-	var cfg *Config
-	cfg, err = LoadConfig(template)
+	var cfg *config.Config
+	cfg, err = config.LoadConfig(template)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +65,7 @@ func TestInitDB(t *testing.T) {
 		data   []byte
 	)
 
-	data, err = MarshalConfig(cfg)
+	data, err = config.MarshalConfig(cfg)
 	if err != nil {
 		t.Errorf("failed to marshal test config: %v", err)
 	}
@@ -80,7 +82,7 @@ func TestInitDB(t *testing.T) {
 		t.Errorf("failed to read written config: %v", err)
 	}
 
-	cfg, err = LoadConfig(data)
+	cfg, err = config.LoadConfig(data)
 	if err != nil {
 		t.Errorf("failed to load written config: %v", err)
 	}
@@ -97,7 +99,7 @@ func TestRunMigrationsCurrentSchema(t *testing.T) {
 	}
 
 	var (
-		cfg *Config
+		cfg *config.Config
 		err error
 	)
 
@@ -143,7 +145,7 @@ func TestRunMigrationsCurrentSchemaAndNewMigrations(t *testing.T) {
 	}
 
 	var (
-		cfg *Config
+		cfg *config.Config
 		err error
 	)
 
@@ -181,7 +183,7 @@ func TestRunMigrationsNewMigrations(t *testing.T) {
 	}
 
 	var (
-		cfg *Config
+		cfg *config.Config
 		err error
 	)
 
@@ -233,7 +235,7 @@ func TestInsertCommands(t *testing.T) {
 	}
 
 	var (
-		cfg *Config
+		cfg *config.Config
 		err error
 	)
 
@@ -296,9 +298,9 @@ func TestInsertUsers(t *testing.T) {
 	err = InsertUsers(
 		tx,
 		false,
-		&PlatformUser{
-			Platform: Platform{ID: 0, Name: "twitch"},
-			User:     User{ID: 0, PermissionID: 0},
+		&client.PlatformUser{
+			Platform: client.Platform{ID: 0, Name: "twitch"},
+			User:     client.User{ID: 0, PermissionID: 0},
 			ID:       "test",
 			Name:     "test",
 		},
@@ -330,8 +332,8 @@ func TestUpdateUserPermission(t *testing.T) {
 		t.Errorf("failed to run migrations: %v", err)
 	}
 
-	users := []*PlatformUser{
-		{Platform: Platform{Name: "twitch"}, User: User{ID: 0, PermissionID: 0}, ID: "test", Name: "test"},
+	users := []*client.PlatformUser{
+		{Platform: client.Platform{Name: "twitch"}, User: client.User{ID: 0, PermissionID: 0}, ID: "test", Name: "test"},
 	}
 
 	err = InsertUsers(tx, false, users...)
@@ -385,9 +387,9 @@ func TestSelectIsUserIgnored(t *testing.T) {
 		t.Fatalf("failed to get admin permission id: %v", err)
 	}
 
-	users := []*PlatformUser{
-		{Platform: Platform{ID: twitchPlatformID, Name: "twitch"}, User: User{ID: 1, PermissionID: 0}, ID: "test1", Name: "test"},
-		{Platform: Platform{ID: twitchPlatformID, Name: "twitch"}, User: User{ID: 2, PermissionID: 0}, ID: "test2", Name: "test"},
+	users := []*client.PlatformUser{
+		{Platform: client.Platform{ID: twitchPlatformID, Name: "twitch"}, User: client.User{ID: 1, PermissionID: 0}, ID: "test1", Name: "test"},
+		{Platform: client.Platform{ID: twitchPlatformID, Name: "twitch"}, User: client.User{ID: 2, PermissionID: 0}, ID: "test2", Name: "test"},
 	}
 
 	err = InsertUsers(tx, false, users...)

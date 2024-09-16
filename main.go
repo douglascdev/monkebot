@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"flag"
+	"monkebot/config"
 	"monkebot/monkebot"
 	"os"
 	"time"
@@ -42,7 +43,7 @@ func main() {
 		defer file.Close()
 
 		var templateJSONBytes []byte
-		templateJSONBytes, err = monkebot.ConfigTemplateJSON()
+		templateJSONBytes, err = config.ConfigTemplateJSON()
 		if err != nil {
 			log.Fatal().Err(err).Msg("failed to generate template")
 		}
@@ -61,14 +62,14 @@ func main() {
 	}
 
 	var (
-		cfg  *monkebot.Config
+		cfg  *config.Config
 		data []byte
 	)
 	data, err = os.ReadFile(*cfgPath)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to read config file")
 	}
-	cfg, err = monkebot.LoadConfig(data)
+	cfg, err = config.LoadConfig(data)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to load config file")
 	}

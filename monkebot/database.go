@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"monkebot/client"
+	"monkebot/config"
 	"sort"
 
 	_ "github.com/ncruces/go-sqlite3/driver"
@@ -51,14 +53,14 @@ func InitDB(driver string, dataSourceName string, cfgReader io.Reader, cfgWriter
 		},
 	}
 
-	var cfg *Config
+	var cfg *config.Config
 	var data []byte
 	data, err = io.ReadAll(cfgReader)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config: %w", err)
 	}
 
-	cfg, err = LoadConfig(data)
+	cfg, err = config.LoadConfig(data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load config: %w", err)
 	}
@@ -74,7 +76,7 @@ func InitDB(driver string, dataSourceName string, cfgReader io.Reader, cfgWriter
 	}
 
 	latestVer := migrations.Migrations[len(migrations.Migrations)-1].Version
-	data, err = MarshalConfig(cfg)
+	data, err = config.MarshalConfig(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal config, update your config to %d manually. Error: %w", latestVer, err)
 	}
@@ -137,7 +139,7 @@ func CurrentSchema() []string {
 	}
 }
 
-func SelectIsUserIgnored(tx *sql.Tx, platformUser *PlatformUser) (bool, error) {
+func SelectIsUserIgnored(tx *sql.Tx, platformUser *client.PlatformUser) (bool, error) {
 	var (
 		err       error
 		isIgnored bool
@@ -184,7 +186,7 @@ func InsertCommands(tx *sql.Tx, commands []Command) error {
 
 // Users that already exist will be ignored.
 // All PlatformUsers must belong to the same platform.
-func InsertUsers(tx *sql.Tx, joinBot bool, platformUsers ...*PlatformUser) error {
+func InsertUsers(tx *sql.Tx, joinBot bool, platformUsers ...*client.PlatformUser) error {
 	var (
 		row *sql.Row
 		err error
@@ -245,7 +247,7 @@ func InsertUsers(tx *sql.Tx, joinBot bool, platformUsers ...*PlatformUser) error
 	return nil
 }
 
-func UpdateUserPermission(tx *sql.Tx, permissionName string, platformUser *PlatformUser) error {
+func UpdateUserPermission(tx *sql.Tx, permissionName string, platformUser *client.PlatformUser) error {
 	var (
 		err    error
 		userID string
@@ -281,7 +283,7 @@ func UpdateUserPermission(tx *sql.Tx, permissionName string, platformUser *Platf
 // Run migrations in the database.
 // If the migration succeeds, the version in DBConfig is updated to the current version
 // and should be saved in the config file.
-func RunMigrations(tx *sql.Tx, config *Config, migrations *DBMigrations) error {
+func RunMigrations(tx *sql.Tx, config *config.Config, migrations *DBMigrations) error {
 	// sort migrations by version
 	sort.Sort(migrations)
 

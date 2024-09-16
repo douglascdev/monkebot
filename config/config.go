@@ -1,4 +1,4 @@
-package monkebot
+package config
 
 import (
 	"encoding/json"
