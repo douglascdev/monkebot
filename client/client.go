@@ -1,16 +1,20 @@
 package client
 
+import "database/sql"
+
 type PlatformClient interface {
 	Join(channels ...string)
 	Part(channels ...string)
 
 	Say(channel string, message string)
 
-	OnConnect()
-
 	OnSelfJoin(channel string)
 	OnSelfPart(channel string)
+	OnMessage(channel string, message string)
 
+	OnConnect()
+
+	BeginTransaction() (*sql.Tx, error)
 	Connect() error
 }
 
