@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"flag"
 	"monkebot/config"
+	"monkebot/database"
 	"monkebot/monkebot"
 	"os"
 	"time"
@@ -80,7 +81,7 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to open config file for writing")
 	}
-	db, err := monkebot.InitDB(cfg.DBConfig.Driver, cfg.DBConfig.DataSourceName, reader, writer)
+	db, err := database.InitDB(cfg.DBConfig.Driver, cfg.DBConfig.DataSourceName, reader, writer)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to initialize database")
 	}

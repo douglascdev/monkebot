@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"monkebot/command"
 	"monkebot/config"
+	"monkebot/database"
 	"monkebot/twitchapi"
 	"time"
 
@@ -30,7 +31,7 @@ func NewMonkebot(cfg config.Config, db *sql.DB) (*Monkebot, error) {
 
 	client.OnPrivateMessage(func(message twitch.PrivateMessage) {
 		startTime := time.Now()
-		normalizedMsg := command.NewMessage(message)
+		normalizedMsg := command.NewMessage(message, db)
 		if err := command.HandleCommands(normalizedMsg, mb, &cfg); err != nil {
 			log.Info().Err(err)
 		}
@@ -56,7 +57,12 @@ func NewMonkebot(cfg config.Config, db *sql.DB) (*Monkebot, error) {
 		}
 		defer tx.Rollback()
 
-		err = InsertCommands(tx, command.Commands)
+		var cmdNames []string
+		for _, cmd := range command.Commands {
+			cmdNames = append(cmdNames, cmd.Name)
+		}
+
+		err = database.InsertCommands(tx, cmdNames...)
 		if err != nil {
 			log.Err(err).Msg("failed to insert commands")
 			return
@@ -80,14 +86,14 @@ func NewMonkebot(cfg config.Config, db *sql.DB) (*Monkebot, error) {
 			}{twitchUser.ID, twitchUser.Name})
 		}
 
-		err = InsertUsers(tx, true, users...)
+		err = database.InsertUsers(tx, true, users...)
 		if err != nil {
 			log.Err(err).Msg("failed to insert initial users in the database")
 			return
 		}
 
 		for _, twitchUser := range twitchUsers {
-			err = InsertUserCommands(tx, command.Commands, twitchUser.ID)
+			err = database.InsertUserCommands(tx, twitchUser.ID, cmdNames...)
 			if err != nil {
 				log.Err(err).Str("name", twitchUser.Name).Str("id", twitchUser.ID).Msg("failed to insert user commands for user")
 				return

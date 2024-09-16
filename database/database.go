@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
-	"monkebot/command"
 	"monkebot/config"
 	"sort"
 
@@ -149,7 +148,7 @@ func SelectIsUserIgnored(tx *sql.Tx, userID string) (bool, error) {
 	return isIgnored, nil
 }
 
-func InsertCommands(tx *sql.Tx, commands []command.Command) error {
+func InsertCommands(tx *sql.Tx, commandNames ...string) error {
 	var (
 		id  int
 		err error
@@ -165,8 +164,8 @@ func InsertCommands(tx *sql.Tx, commands []command.Command) error {
 	if err != nil {
 		return fmt.Errorf("failed to create prepared insert for commands: %w", err)
 	}
-	for _, command := range commands {
-		_, err = preparedInsert.Exec(command.Name)
+	for _, command := range commandNames {
+		_, err = preparedInsert.Exec(command)
 		if err != nil {
 			return fmt.Errorf("failed to insert command: %w", err)
 		}
@@ -176,14 +175,14 @@ func InsertCommands(tx *sql.Tx, commands []command.Command) error {
 }
 
 // inserts the current list of commands for a user, so that admins have channel-level control over commands
-func InsertUserCommands(tx *sql.Tx, commands []command.Command, userID string) error {
+func InsertUserCommands(tx *sql.Tx, userID string, commandNames ...string) error {
 	rows, err := tx.Query("SELECT id FROM command")
 	if err != nil {
 		return fmt.Errorf("failed to get command ids: %w", err)
 	}
 	defer rows.Close()
 
-	commandIDs := make([]int, len(commands))
+	commandIDs := make([]int, len(commandNames))
 	for i := 0; rows.Next(); i++ {
 		var id int
 		err = rows.Scan(&id)

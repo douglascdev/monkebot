@@ -1,6 +1,7 @@
 package command
 
 import (
+	"database/sql"
 	"fmt"
 	"monkebot/config"
 	"strings"
@@ -34,9 +35,10 @@ type Message struct {
 	Time    time.Time
 	Channel string
 	Chatter Chatter
+	DB      *sql.DB
 }
 
-func NewMessage(msg twitch.PrivateMessage) *Message {
+func NewMessage(msg twitch.PrivateMessage, db *sql.DB) *Message {
 	return &Message{
 		Message: msg.Message,
 		Time:    msg.Time,
@@ -45,12 +47,14 @@ func NewMessage(msg twitch.PrivateMessage) *Message {
 			Name: msg.User.Name,
 			ID:   msg.User.ID,
 		},
+		DB: db,
 	}
 }
 
 var Commands = []Command{
 	ping,
 	senzpTest,
+	join,
 }
 
 var commandMap = createCommandMap(Commands)

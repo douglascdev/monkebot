@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"database/sql"
 	"io"
-	"monkebot/command"
 	"monkebot/config"
 	"testing"
 )
@@ -248,9 +247,7 @@ func TestInsertCommands(t *testing.T) {
 		t.Errorf("failed to run migrations: %v", err)
 	}
 
-	err = InsertCommands(tx, []command.Command{
-		{Name: "test"},
-	})
+	err = InsertCommands(tx, "test")
 	if err != nil {
 		t.Errorf("failed to insert commands: %v", err)
 	}
@@ -336,12 +333,12 @@ func TestInsertUserCommands(t *testing.T) {
 		t.Errorf("failed to insert users: %v", err)
 	}
 
-	err = InsertCommands(tx, command.Commands)
+	err = InsertCommands(tx, "test")
 	if err != nil {
 		t.Errorf("failed to insert commands: %v", err)
 	}
 
-	err = InsertUserCommands(tx, command.Commands, "test")
+	err = InsertUserCommands(tx, "test", "test")
 	if err != nil {
 		t.Errorf("failed to insert user commands: %v", err)
 	}
