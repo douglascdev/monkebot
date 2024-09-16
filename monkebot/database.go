@@ -91,8 +91,10 @@ func CurrentSchema() []string {
 	return []string{
 		// DDL
 		`CREATE TABLE user (
-			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+			id TEXT NOT NULL PRIMARY KEY,
+			name TEXT NOT NULL,
 			permission_id INTEGER NOT NULL,
+			bot_is_joined BOOL NOT NULL DEFAULT false,
 			FOREIGN KEY (permission_id) REFERENCES permission(id)
 		)`,
 		`CREATE TABLE permission (
@@ -101,44 +103,30 @@ func CurrentSchema() []string {
 			is_ignored BOOL NOT NULL DEFAULT false,
 			is_bot_admin BOOL NOT NULL DEFAULT false
 		)`,
-		`CREATE TABLE user_platform (
-			id TEXT NOT NULL PRIMARY KEY,
-			user_id INTEGER NOT NULL,
-			platform_id INTEGER NOT NULL,
-			bot_is_joined BOOL NOT NULL DEFAULT false,
-			FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
-			FOREIGN KEY (platform_id) REFERENCES platform(id) ON DELETE CASCADE
-		)`,
-		`CREATE INDEX idx_bot_is_joined ON user_platform(bot_is_joined)`,
-		`CREATE TABLE platform (
-			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-			name TEXT NOT NULL
-		)`,
 		`CREATE TABLE command (
 			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 			name TEXT NOT NULL
 		)`,
 		`CREATE INDEX idx_name ON command(name)`,
-		`CREATE TABLE user_platform_command (
+		`CREATE TABLE user_command (
 			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 			user_id TEXT NOT NULL,
 			command_id INTEGER NOT NULL,
 			platform_id INTEGER NOT NULL,
 			is_enabled BOOL NOT NULL DEFAULT true,
-			FOREIGN KEY (user_id, platform_id, command_id) REFERENCES user_platform(user_id, platform_id, command_id) ON DELETE CASCADE
+			FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
+			FOREIGN KEY (command_id) REFERENCES command(id) ON DELETE CASCADE
 		)`,
-		`CREATE INDEX idx_is_enabled ON user_platform_command(is_enabled)`,
+		`CREATE INDEX idx_is_enabled ON user_command(is_enabled)`,
 
 		// DML
-		`INSERT INTO platform (name) VALUES ('twitch')`,
-
 		`INSERT INTO permission (name) VALUES ('user')`,
 		`INSERT INTO permission (name, is_ignored) VALUES ('banned', true)`,
 		`INSERT INTO permission (name, is_bot_admin) VALUES ('admin', true)`,
 	}
 }
 
-func SelectIsUserIgnored(tx *sql.Tx, platformUser *PlatformUser) (bool, error) {
+func SelectIsUserIgnored(tx *sql.Tx, userID string) (bool, error) {
 	var (
 		err       error
 		isIgnored bool
@@ -146,10 +134,9 @@ func SelectIsUserIgnored(tx *sql.Tx, platformUser *PlatformUser) (bool, error) {
 
 	err = tx.QueryRow(`
 		SELECT p.is_ignored FROM permission p
-		INNER JOIN user_platform up ON up.user_id = u.id
 		INNER JOIN user u ON u.permission_id = p.id
-		WHERE up.platform_id = ? AND up.id = ?
-	`, platformUser.Platform.ID, platformUser.ID).Scan(&isIgnored)
+		WHERE u.id = ?
+	`, userID).Scan(&isIgnored)
 	if err != nil {
 		return false, err
 	}
@@ -185,19 +172,11 @@ func InsertCommands(tx *sql.Tx, commands []Command) error {
 
 // Users that already exist will be ignored.
 // All PlatformUsers must belong to the same platform.
-func InsertUsers(tx *sql.Tx, joinBot bool, platformUsers ...*PlatformUser) error {
+func InsertUsers(tx *sql.Tx, joinBot bool, users ...struct{ ID, Name string }) error {
 	var (
 		row *sql.Row
 		err error
 	)
-
-	// find twitch platform id
-	var platformID int
-	row = tx.QueryRow("SELECT id FROM platform WHERE name = ?", platformUsers[0].Platform.Name)
-	err = row.Scan(&platformID)
-	if err != nil {
-		return fmt.Errorf("failed to find twitch platform: %w", err)
-	}
 
 	// find user permission id
 	var userPermissionID int
@@ -209,16 +188,9 @@ func InsertUsers(tx *sql.Tx, joinBot bool, platformUsers ...*PlatformUser) error
 
 	// prepare user insert
 	var userInsertStmt *sql.Stmt
-	userInsertStmt, err = tx.Prepare("INSERT INTO user (permission_id) VALUES (?)")
+	userInsertStmt, err = tx.Prepare("INSERT INTO user (id, permission_id, name, bot_is_joined) VALUES (?, ?, ?, ?)")
 	if err != nil {
 		return fmt.Errorf("failed to prepare user insert: %w", err)
-	}
-
-	// prepare user_platform insert
-	var userPlatformInsertStmt *sql.Stmt
-	userPlatformInsertStmt, err = tx.Prepare("INSERT INTO user_platform (id, user_id, platform_id, bot_is_joined) VALUES (?, ?, ?, ?)")
-	if err != nil {
-		return fmt.Errorf("failed to prepare user_platform insert: %w", err)
 	}
 
 	// insert users
@@ -226,42 +198,26 @@ func InsertUsers(tx *sql.Tx, joinBot bool, platformUsers ...*PlatformUser) error
 		result sql.Result
 		userID int64
 	)
-	for _, platformUser := range platformUsers {
-		result, err = userInsertStmt.Exec(userPermissionID)
+	for _, user := range users {
+		result, err = userInsertStmt.Exec(user.ID, userPermissionID, user.Name, joinBot)
 		if err != nil {
-			log.Err(err).Str("name", platformUser.Name).Msg("skipping insertion for user")
+			log.Err(err).Str("name", user.Name).Msg("skipping insertion for user")
 			continue
 		}
 		userID, err = result.LastInsertId()
 		if err != nil {
 			return fmt.Errorf("failed to get inserted user's id")
 		}
-		result, err = userPlatformInsertStmt.Exec(platformUser.ID, userID, platformID, joinBot)
-		if err != nil {
-			return fmt.Errorf("failed to insert user_platform")
-		}
-		platformUser.PermissionID = int64(userPermissionID)
-		log.Info().Int64("user_id", userID).Str("name", platformUser.Name).Msg("inserted new user")
+		log.Info().Int64("user_id", userID).Str("name", user.Name).Msg("inserted new user")
 	}
 	return nil
 }
 
-func UpdateUserPermission(tx *sql.Tx, permissionName string, platformUser *PlatformUser) error {
+func UpdateUserPermission(tx *sql.Tx, userID string, permissionName string) error {
 	var (
-		err    error
-		userID string
+		err       error
+		newPermID int64
 	)
-
-	err = tx.QueryRow(`
-		SELECT u.id FROM user u
-		INNER JOIN user_platform up ON u.id = up.user_id
-		WHERE up.id = ?
-	`, platformUser.ID).Scan(&userID)
-	if err != nil {
-		return fmt.Errorf("failed to find user id for %s: %w", platformUser.Name, err)
-	}
-
-	var newPermID int64
 	err = tx.QueryRow(`
 		SELECT id FROM permission p WHERE p.name = ?
 	`, permissionName).Scan(&newPermID)
@@ -271,10 +227,8 @@ func UpdateUserPermission(tx *sql.Tx, permissionName string, platformUser *Platf
 
 	_, err = tx.Exec("UPDATE user SET permission_id = ? WHERE id = ?", newPermID, userID)
 	if err != nil {
-		return fmt.Errorf("failed to update user %s: %w", platformUser.Name, err)
+		return fmt.Errorf("failed to update user %s: %w", userID, err)
 	}
-
-	platformUser.PermissionID = newPermID
 
 	return nil
 }

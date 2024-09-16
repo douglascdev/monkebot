@@ -115,18 +115,12 @@ func TestRunMigrationsCurrentSchema(t *testing.T) {
 	if err != nil {
 		t.Errorf("failed to run migrations with current schema: %v", err)
 	}
-	res := tx.QueryRow("SELECT id, name FROM platform")
+	res := tx.QueryRow("SELECT id FROM permission WHERE name = 'user'")
 
-	var (
-		id       int
-		platform string
-	)
-	err = res.Scan(&id, &platform)
+	var id int
+	err = res.Scan(&id)
 	if err != nil {
-		t.Errorf("failed to scan platform value: %v", err)
-	}
-	if platform != "twitch" {
-		t.Errorf("unexpected platform value: %s", platform)
+		t.Errorf("failed to scan permission value: %v", err)
 	}
 }
 
@@ -297,11 +291,12 @@ func TestInsertUsers(t *testing.T) {
 	err = InsertUsers(
 		tx,
 		false,
-		&PlatformUser{
-			Platform: Platform{ID: 0, Name: "twitch"},
-			User:     User{ID: 0, PermissionID: 0},
-			ID:       "test",
-			Name:     "test",
+		struct {
+			ID   string
+			Name string
+		}{
+			ID:   "test",
+			Name: "test",
 		},
 	)
 	if err != nil {
@@ -331,16 +326,21 @@ func TestUpdateUserPermission(t *testing.T) {
 		t.Errorf("failed to run migrations: %v", err)
 	}
 
-	users := []*PlatformUser{
-		{Platform: Platform{Name: "twitch"}, User: User{ID: 0, PermissionID: 0}, ID: "test", Name: "test"},
-	}
-
-	err = InsertUsers(tx, false, users...)
+	err = InsertUsers(tx, false, struct {
+		ID   string
+		Name string
+	}{"test", "test"})
 	if err != nil {
 		t.Fatalf("failed to insert users: %v", err)
 	}
 
-	err = UpdateUserPermission(tx, "admin", users[0])
+	var userID string
+	err = tx.QueryRow("SELECT id FROM user WHERE name = 'test'").Scan(&userID)
+	if err != nil {
+		t.Fatalf("failed to get user id: %v", err)
+	}
+
+	err = UpdateUserPermission(tx, userID, "admin")
 	if err != nil {
 		t.Fatalf("failed to update user: %v", err)
 	}
@@ -380,15 +380,12 @@ func TestSelectIsUserIgnored(t *testing.T) {
 		t.Fatalf("failed to get admin permission id: %v", err)
 	}
 
-	var twitchPlatformID int
-	err = tx.QueryRow("SELECT id FROM platform WHERE name = 'twitch'").Scan(&twitchPlatformID)
-	if err != nil {
-		t.Fatalf("failed to get admin permission id: %v", err)
-	}
-
-	users := []*PlatformUser{
-		{Platform: Platform{ID: twitchPlatformID, Name: "twitch"}, User: User{ID: 1, PermissionID: 0}, ID: "test1", Name: "test"},
-		{Platform: Platform{ID: twitchPlatformID, Name: "twitch"}, User: User{ID: 2, PermissionID: 0}, ID: "test2", Name: "test"},
+	users := []struct {
+		ID   string
+		Name string
+	}{
+		{"test1", "test1"},
+		{"test2", "test2"},
 	}
 
 	err = InsertUsers(tx, false, users...)
@@ -396,19 +393,30 @@ func TestSelectIsUserIgnored(t *testing.T) {
 		t.Fatalf("failed to insert users: %v", err)
 	}
 
-	err = UpdateUserPermission(tx, "banned", users[0])
+	var test1ID, test2ID string
+	err = tx.QueryRow("SELECT id FROM user WHERE name = 'test1'").Scan(&test1ID)
+	if err != nil {
+		t.Fatalf("failed to get user id: %v", err)
+	}
+
+	err = tx.QueryRow("SELECT id FROM user WHERE name = 'test2'").Scan(&test2ID)
+	if err != nil {
+		t.Fatalf("failed to get user id: %v", err)
+	}
+
+	err = UpdateUserPermission(tx, test1ID, "banned")
 	if err != nil {
 		t.Fatalf("failed to update user: %v", err)
 	}
 
-	err = UpdateUserPermission(tx, "admin", users[1])
+	err = UpdateUserPermission(tx, test2ID, "admin")
 	if err != nil {
 		t.Fatalf("failed to update user: %v", err)
 	}
 
 	// ensure banned users are ignored
 	var isIgnored bool
-	isIgnored, err = SelectIsUserIgnored(tx, users[0])
+	isIgnored, err = SelectIsUserIgnored(tx, test1ID)
 	if err != nil {
 		t.Fatalf("failed to update user: %v", err)
 	}
@@ -418,7 +426,7 @@ func TestSelectIsUserIgnored(t *testing.T) {
 	}
 
 	// ensure admin users aren't ignored
-	isIgnored, err = SelectIsUserIgnored(tx, users[1])
+	isIgnored, err = SelectIsUserIgnored(tx, test2ID)
 	if err != nil {
 		t.Fatalf("failed to update user: %v", err)
 	}
