@@ -1,4 +1,4 @@
-package monkebot
+package command
 
 import (
 	"fmt"

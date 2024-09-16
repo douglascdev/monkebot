@@ -3,6 +3,7 @@ package monkebot
 import (
 	"database/sql"
 	"fmt"
+	"monkebot/command"
 	"monkebot/config"
 	"time"
 
@@ -28,8 +29,8 @@ func NewMonkebot(cfg config.Config, db *sql.DB) (*Monkebot, error) {
 
 	client.OnPrivateMessage(func(message twitch.PrivateMessage) {
 		startTime := time.Now()
-		normalizedMsg := NewMessage(message)
-		if err := HandleCommands(normalizedMsg, mb, &cfg); err != nil {
+		normalizedMsg := command.NewMessage(message)
+		if err := command.HandleCommands(normalizedMsg, mb, &cfg); err != nil {
 			log.Info().Err(err)
 		}
 		internalLatency := fmt.Sprintf("%d ms", time.Since(startTime).Milliseconds())

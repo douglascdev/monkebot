@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"io"
+	"monkebot/command"
 	"monkebot/config"
 	"testing"
 )
@@ -247,7 +248,7 @@ func TestInsertCommands(t *testing.T) {
 		t.Errorf("failed to run migrations: %v", err)
 	}
 
-	err = InsertCommands(tx, []Command{
+	err = InsertCommands(tx, []command.Command{
 		{Name: "test"},
 	})
 	if err != nil {

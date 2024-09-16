@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"monkebot/command"
 	"monkebot/config"
 	"sort"
 
@@ -144,7 +145,7 @@ func SelectIsUserIgnored(tx *sql.Tx, userID string) (bool, error) {
 	return isIgnored, nil
 }
 
-func InsertCommands(tx *sql.Tx, commands []Command) error {
+func InsertCommands(tx *sql.Tx, commands []command.Command) error {
 	var (
 		id  int
 		err error
