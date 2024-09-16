@@ -48,12 +48,12 @@ func NewMessage(msg twitch.PrivateMessage) *Message {
 	}
 }
 
-var commands = []Command{
+var Commands = []Command{
 	ping,
 	senzpTest,
 }
 
-var commandMap = createCommandMap(commands)
+var commandMap = createCommandMap(Commands)
 
 // Maps command names and aliases to Command structs
 func createCommandMap(commands []Command) map[string]Command {

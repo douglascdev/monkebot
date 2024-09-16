@@ -15,11 +15,11 @@ func (m *MockSender) Say(channel string, message string) {
 }
 
 func TestCommandMap(t *testing.T) {
-	if len(commandMap) != len(commands) {
-		t.Errorf("expected %d commands, got %d", len(commands), len(commandMap))
+	if len(commandMap) != len(Commands) {
+		t.Errorf("expected %d commands, got %d", len(Commands), len(commandMap))
 	}
 
-	for _, cmd := range commands {
+	for _, cmd := range Commands {
 		if _, ok := commandMap[cmd.Name]; !ok {
 			t.Errorf("command '%s' not found in commandMap", cmd.Name)
 		}

@@ -113,7 +113,6 @@ func CurrentSchema() []string {
 			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 			user_id TEXT NOT NULL,
 			command_id INTEGER NOT NULL,
-			platform_id INTEGER NOT NULL,
 			is_enabled BOOL NOT NULL DEFAULT true,
 			FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
 			FOREIGN KEY (command_id) REFERENCES command(id) ON DELETE CASCADE
@@ -165,6 +164,44 @@ func InsertCommands(tx *sql.Tx, commands []command.Command) error {
 		_, err = preparedInsert.Exec(command.Name)
 		if err != nil {
 			return fmt.Errorf("failed to insert command: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// inserts the current list of commands for a user, so that admins have channel-level control over commands
+func InsertUserCommands(tx *sql.Tx, commands []command.Command, userID string) error {
+	rows, err := tx.Query("SELECT id FROM command")
+	if err != nil {
+		return fmt.Errorf("failed to get command ids: %w", err)
+	}
+	defer rows.Close()
+
+	commandIDs := make([]int, len(commands))
+	for i := 0; rows.Next(); i++ {
+		var id int
+		err = rows.Scan(&id)
+		if err != nil {
+			return fmt.Errorf("failed to scan command ids: %w", err)
+		}
+		commandIDs[i] = id
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return fmt.Errorf("failed to get command ids: %w", err)
+	}
+
+	var userCommandInsertStmt *sql.Stmt
+	userCommandInsertStmt, err = tx.Prepare("INSERT INTO user_command (user_id, command_id) VALUES (?, ?)")
+	if err != nil {
+		return fmt.Errorf("failed to prepare user command insert: %w", err)
+	}
+	for _, commandID := range commandIDs {
+		_, err = userCommandInsertStmt.Exec(userID, commandID)
+		if err != nil {
+			return fmt.Errorf("failed to insert user command: %w", err)
 		}
 	}
 

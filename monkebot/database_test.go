@@ -305,6 +305,48 @@ func TestInsertUsers(t *testing.T) {
 	}
 }
 
+func TestInsertUserCommands(t *testing.T) {
+	tx, err := testDB.Begin()
+	if err != nil {
+		t.Errorf("failed to begin transaction: %v", err)
+	}
+	defer tx.Rollback()
+
+	// initial schema inserts are needed to test user insertions
+	migrations := DBMigrations{
+		Migrations: []DBMigration{
+			{Version: 1, Stmts: CurrentSchema()},
+		},
+	}
+
+	cfg, err := generateTestConfig()
+	if err != nil {
+		t.Errorf("failed to generate test config: %v", err)
+	}
+	err = RunMigrations(tx, cfg, &migrations)
+	if err != nil {
+		t.Errorf("failed to run migrations: %v", err)
+	}
+
+	err = InsertUsers(tx, true, struct {
+		ID   string
+		Name string
+	}{"test", "test"})
+	if err != nil {
+		t.Errorf("failed to insert users: %v", err)
+	}
+
+	err = InsertCommands(tx, command.Commands)
+	if err != nil {
+		t.Errorf("failed to insert commands: %v", err)
+	}
+
+	err = InsertUserCommands(tx, command.Commands, "test")
+	if err != nil {
+		t.Errorf("failed to insert user commands: %v", err)
+	}
+}
+
 func TestUpdateUserPermission(t *testing.T) {
 	tx, err := testDB.Begin()
 	if err != nil {
