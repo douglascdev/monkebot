@@ -1,4 +1,4 @@
-package monkebot
+package database
 
 import (
 	"bytes"
