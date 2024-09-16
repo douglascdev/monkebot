@@ -49,13 +49,24 @@ func NewMonkebot(cfg config.Config, db *sql.DB) (*Monkebot, error) {
 			Str("login", cfg.Login).
 			Msg("connected to Twitch")
 
-		mb.Join(cfg.InitialChannels...)
-
 		tx, err := db.Begin()
 		if err != nil {
 			log.Err(err).Msg("failed to initialize transaction")
 		}
 		defer tx.Rollback()
+
+		// initial inserts are done, just join saved channels
+		if database.IsSchemaUpToDate(&cfg) {
+			var savedChannels []string
+			savedChannels, err = database.SelectJoinedChannels(tx)
+			if err != nil {
+				log.Err(err).Msg("failed to get saved channels")
+			}
+			log.Info().Strs("channels", savedChannels).Msg("successfully joined saved channels")
+			return
+		}
+
+		mb.Join(cfg.InitialChannels...)
 
 		var cmdNames []string
 		for _, cmd := range command.Commands {
@@ -106,7 +117,7 @@ func NewMonkebot(cfg config.Config, db *sql.DB) (*Monkebot, error) {
 			return
 		}
 
-		log.Info().Msg("successfully inserted initial channels, you may remove the channels from the config now")
+		log.Info().Msg("successfully inserted initial channels")
 	})
 
 	client.OnSelfJoinMessage(func(message twitch.UserJoinMessage) {

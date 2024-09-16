@@ -34,6 +34,12 @@ func (m *DBMigrations) Less(i, j int) bool {
 	return m.Migrations[i].Version < m.Migrations[j].Version
 }
 
+var Migrations = DBMigrations{
+	Migrations: []DBMigration{
+		{Version: 1, Stmts: CurrentSchema()},
+	},
+}
+
 // Initialize the database, run needed migrations and update database config to the latest version if the miggrations succeed
 func InitDB(driver string, dataSourceName string, cfgReader io.Reader, cfgWriter io.Writer) (*sql.DB, error) {
 	db, err := sql.Open(driver, dataSourceName)
@@ -44,12 +50,6 @@ func InitDB(driver string, dataSourceName string, cfgReader io.Reader, cfgWriter
 	err = db.Ping()
 	if err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
-	}
-
-	migrations := DBMigrations{
-		Migrations: []DBMigration{
-			{Version: 1, Stmts: CurrentSchema()},
-		},
 	}
 
 	var cfg *config.Config
@@ -69,7 +69,7 @@ func InitDB(driver string, dataSourceName string, cfgReader io.Reader, cfgWriter
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	err = RunMigrations(tx, cfg, &migrations)
+	err = RunMigrations(tx, cfg, &Migrations)
 	if err != nil {
 		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
@@ -79,7 +79,7 @@ func InitDB(driver string, dataSourceName string, cfgReader io.Reader, cfgWriter
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
-	latestVer := migrations.Migrations[len(migrations.Migrations)-1].Version
+	latestVer := Migrations.Migrations[len(Migrations.Migrations)-1].Version
 	data, err = config.MarshalConfig(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal config, update your config to %d manually. Error: %w", latestVer, err)
@@ -90,6 +90,10 @@ func InitDB(driver string, dataSourceName string, cfgReader io.Reader, cfgWriter
 	}
 
 	return db, nil
+}
+
+func IsSchemaUpToDate(cfg *config.Config) bool {
+	return cfg.DBConfig.Version == len(Migrations.Migrations)
 }
 
 func CurrentSchema() []string {
@@ -146,6 +150,27 @@ func SelectIsUserIgnored(tx *sql.Tx, userID string) (bool, error) {
 	}
 
 	return isIgnored, nil
+}
+
+func SelectJoinedChannels(tx *sql.Tx) ([]string, error) {
+	var (
+		err      error
+		channels []string
+	)
+	rows, err := tx.Query("SELECT name FROM user WHERE bot_is_joined")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var channel string
+		err = rows.Scan(&channel)
+		if err != nil {
+			return nil, err
+		}
+		channels = append(channels, channel)
+	}
+	return channels, nil
 }
 
 func InsertCommands(tx *sql.Tx, commandNames ...string) error {
