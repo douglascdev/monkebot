@@ -75,6 +75,11 @@ func InitDB(driver string, dataSourceName string, cfgReader io.Reader, cfgWriter
 		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
 
+	err = tx.Commit()
+	if err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
 	latestVer := migrations.Migrations[len(migrations.Migrations)-1].Version
 	data, err = config.MarshalConfig(cfg)
 	if err != nil {

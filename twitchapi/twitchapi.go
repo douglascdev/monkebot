@@ -3,6 +3,7 @@ package twitchapi
 import (
 	"encoding/json"
 	"fmt"
+	"monkebot/config"
 	"net/http"
 	"strings"
 	"time"
@@ -29,7 +30,7 @@ type helixUserResponse struct {
 	Data []helixUser `json:"data"`
 }
 
-func GetUserByName(token string, names ...string) ([]*twitch.User, error) {
+func GetUserByName(config *config.Config, names ...string) ([]*twitch.User, error) {
 	if len(names) == 0 {
 		return nil, nil
 	}
@@ -47,7 +48,8 @@ func GetUserByName(token string, names ...string) ([]*twitch.User, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("Authorization", "Bearer "+token)
+	req.Header.Add("Authorization", "Bearer "+config.TwitchToken)
+	req.Header.Add("Client-Id", config.ClientID)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -76,7 +78,7 @@ func GetUserByName(token string, names ...string) ([]*twitch.User, error) {
 	return users, nil
 }
 
-func GetUserByID(token string, ids ...string) ([]*twitch.User, error) {
+func GetUserByID(config config.Config, ids ...string) ([]*twitch.User, error) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
@@ -93,7 +95,8 @@ func GetUserByID(token string, ids ...string) ([]*twitch.User, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("Authorization", "Bearer "+token)
+	req.Header.Add("Authorization", "Bearer "+config.TwitchToken)
+	req.Header.Add("Client-Id", config.ClientID)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
