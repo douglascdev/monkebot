@@ -54,6 +54,9 @@ type Message struct {
 }
 
 func NewMessage(msg twitch.PrivateMessage, db *sql.DB, cfg *config.Config) *Message {
+	IsBroadcaster := msg.RoomID == msg.User.ID
+	_, IsMod := msg.Tags["mod"]
+	_, IsVIP := msg.Tags["vip"]
 	return &Message{
 		Message: msg.Message,
 		Time:    msg.Time,
@@ -63,9 +66,9 @@ func NewMessage(msg twitch.PrivateMessage, db *sql.DB, cfg *config.Config) *Mess
 		Chatter: Chatter{
 			Name:          msg.User.Name,
 			ID:            msg.User.ID,
-			IsMod:         msg.Tags["mod"] == "mod",
-			IsVIP:         msg.Tags["vip"] == "vip",
-			IsBroadcaster: msg.RoomID == msg.User.ID,
+			IsMod:         IsMod,
+			IsVIP:         IsVIP,
+			IsBroadcaster: IsBroadcaster,
 		},
 		DB: db,
 	}

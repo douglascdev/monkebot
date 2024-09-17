@@ -25,8 +25,18 @@ var setenabled = Command{
 			err     error
 		)
 		if command, ok = commandMap[args[1]]; !ok {
-			sender.Say(message.Channel, "❌Unknown command")
-			return nil
+			found := false
+			for _, cmd := range commandsNoPrefix {
+				if cmd.Name == args[1] {
+					command = cmd
+					found = true
+					break
+				}
+			}
+			if !found {
+				sender.Say(message.Channel, fmt.Sprintf("❌Unknown command '%s'", args[1]))
+				return nil
+			}
 		}
 
 		if !command.CanDisable {
