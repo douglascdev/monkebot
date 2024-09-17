@@ -5,15 +5,31 @@ import (
 	"monkebot/database"
 )
 
-var buttsbot = Command{
-	Name:        "buttsbot",
-	Usage:       "buttsbot <on | off>",
-	Description: "Randomly replaces message syllables with butt",
+var setenabled = Command{
+	Name:        "setenabled",
+	Usage:       "setenabled <command> <on | off>",
+	Description: "Enables or disables a command for all users in the channel",
 	Cooldown:    5,
 	NoPrefix:    false,
+	CanDisable:  false,
 	Execute: func(message *Message, sender MessageSender, args []string) error {
-		if len(args) != 2 || (args[1] != "on" && args[1] != "off") {
-			sender.Say(message.Chatter.Name, "Usage: buttsbot <on | off>")
+		if len(args) != 3 || (args[2] != "on" && args[2] != "off") {
+			sender.Say(message.Chatter.Name, "Usage: setenabled <command> <on | off>")
+			return nil
+		}
+
+		var (
+			command Command
+			ok      bool
+			err     error
+		)
+		if command, ok = commandMap[args[1]]; !ok {
+			sender.Say(message.Channel, "❌Unknown command")
+			return nil
+		}
+
+		if !command.CanDisable {
+			sender.Say(message.Channel, "❌This command cannot be disabled")
 			return nil
 		}
 
@@ -29,7 +45,7 @@ var buttsbot = Command{
 		}
 		defer tx.Rollback()
 
-		err = database.UpdateIsUserCommandEnabled(tx, args[1] == "on", message.RoomID, "buttsbot")
+		err = database.UpdateIsUserCommandEnabled(tx, args[2] == "on", message.RoomID, command.Name)
 		if err != nil {
 			sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
 			return err
@@ -41,7 +57,7 @@ var buttsbot = Command{
 			return err
 		}
 
-		sender.Say(message.Channel, fmt.Sprintf("✅Set command buttsbot to '%s'", args[1]))
+		sender.Say(message.Channel, fmt.Sprintf("✅Set command '%s' to '%s'", command.Name, args[2]))
 		return nil
 	},
 }

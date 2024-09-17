@@ -336,9 +336,9 @@ func UpdateIsUserCommandEnabled(tx *sql.Tx, enabled bool, channelID string, comm
 	result, err := tx.Exec(`
 			UPDATE user_command SET is_enabled = ?
 			WHERE command_id = (
-				SELECT id FROM command WHERE name = 'buttsbot'
+				SELECT id FROM command WHERE name = ?
 			) AND user_id = ?`,
-		enabled, channelID)
+		enabled, commandName, channelID)
 	if err != nil {
 		return fmt.Errorf("failed to update is_user_command_enabled: %w", err)
 	}
@@ -353,6 +353,22 @@ func UpdateIsUserCommandEnabled(tx *sql.Tx, enabled bool, channelID string, comm
 	}
 
 	return nil
+}
+
+func SelectIsUserCommandEnabled(tx *sql.Tx, channelID string, commandName string) (bool, error) {
+	var enabled bool
+	err := tx.QueryRow(`
+			SELECT is_enabled
+			FROM user_command
+			WHERE command_id = (
+				SELECT id FROM command WHERE name = ?
+			) AND user_id = ?`,
+		commandName, channelID).Scan(&enabled)
+	if err != nil {
+		return false, fmt.Errorf("failed to select is_user_command_enabled: %w", err)
+	}
+
+	return enabled, nil
 }
 
 // Run migrations in the database.

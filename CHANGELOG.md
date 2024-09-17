@@ -5,3 +5,4 @@
 - Better logging
 - Add join and part commands
 - Add setlevel command
+- Add setenabled command

@@ -16,6 +16,7 @@ var join = Command{
 	Description: "Join the message author's channel",
 	Cooldown:    5,
 	NoPrefix:    false,
+	CanDisable:  false,
 	Execute: func(message *Message, sender MessageSender, args []string) error {
 		tx, err := message.DB.Begin()
 		if err != nil {

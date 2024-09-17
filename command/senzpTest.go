@@ -12,6 +12,7 @@ var senzpTest = Command{
 	Description: "Translates senzp language to english",
 	Cooldown:    5,
 	NoPrefix:    true,
+	CanDisable:  true,
 	Execute: func(message *Message, sender MessageSender, args []string) error {
 		cleanString := func(s string) string {
 			cleaned := []rune{}

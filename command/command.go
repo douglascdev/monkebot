@@ -4,10 +4,12 @@ import (
 	"database/sql"
 	"fmt"
 	"monkebot/config"
+	"monkebot/database"
 	"strings"
 	"time"
 
 	"github.com/gempir/go-twitch-irc/v4"
+	"github.com/rs/zerolog/log"
 )
 
 type MessageSender interface {
@@ -23,6 +25,7 @@ type Command struct {
 	Description string
 	Cooldown    int
 	NoPrefix    bool
+	CanDisable  bool
 	Execute     func(message *Message, sender MessageSender, args []string) error
 }
 
@@ -68,10 +71,14 @@ var Commands = []Command{
 	join,
 	part,
 	setLevel,
-	buttsbot,
+	setenabled,
 }
 
-var commandMap = createCommandMap(Commands)
+var commandMap map[string]Command
+
+func init() {
+	commandMap = createCommandMap(Commands)
+}
 
 // Maps command names and aliases to Command structs
 func createCommandMap(commands []Command) map[string]Command {
@@ -96,6 +103,25 @@ func HandleCommands(message *Message, sender MessageSender, config *config.Confi
 	}
 
 	if cmd, ok := commandMap[args[0]]; ok {
+		if cmd.CanDisable {
+
+			tx, err := message.DB.Begin()
+			if err != nil {
+				return fmt.Errorf("failed to begin transaction: %w", err)
+			}
+			defer tx.Rollback()
+
+			var enabled bool
+			enabled, err = database.SelectIsUserCommandEnabled(tx, message.RoomID, cmd.Name)
+			if err != nil {
+				return err
+			}
+
+			if !enabled {
+				log.Debug().Str("command", cmd.Name).Str("channel", message.Channel).Msg("ignored disabled command")
+				return nil
+			}
+		}
 		if len(args) > 1 {
 			argsStart := strings.Index(message.Message, " ")
 			args = strings.Split(message.Message[argsStart:], " ")

@@ -14,6 +14,7 @@ var setLevel = Command{
 	Description: "Responds with pong and latency to twitch in milliseconds",
 	Cooldown:    5,
 	NoPrefix:    false,
+	CanDisable:  false,
 	Execute: func(message *Message, sender MessageSender, args []string) error {
 		tx, err := message.DB.Begin()
 		defer tx.Rollback()
