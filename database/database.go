@@ -173,6 +173,22 @@ func SelectJoinedChannels(tx *sql.Tx) ([]string, error) {
 	return channels, nil
 }
 
+func SelectIsUserAdmin(tx *sql.Tx, userID string) (bool, error) {
+	var (
+		err     error
+		isAdmin bool
+	)
+	err = tx.QueryRow(`
+		SELECT p.is_bot_admin FROM permission p
+		INNER JOIN user u ON u.permission_id = p.id
+		WHERE u.id = ?
+	`, userID).Scan(&isAdmin)
+	if err != nil {
+		return false, err
+	}
+	return isAdmin, nil
+}
+
 func InsertCommands(tx *sql.Tx, commandNames ...string) error {
 	var (
 		id  int

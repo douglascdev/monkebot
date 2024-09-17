@@ -2,7 +2,6 @@ package command
 
 import (
 	"database/sql"
-	"fmt"
 	"monkebot/database"
 
 	"github.com/rs/zerolog/log"
@@ -21,10 +20,40 @@ var join = Command{
 			sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
 			return err
 		}
-		err = database.InsertUsers(tx, true)
+
+		var channelsToJoin []struct {
+			ID   string
+			Name string
+		}
+
+		if len(args) > 0 {
+			var isAdmin bool
+			isAdmin, err = database.SelectIsUserAdmin(tx, message.Chatter.ID)
+			if err != nil {
+				sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
+				return err
+			}
+			if !isAdmin {
+				sender.Say(message.Channel, "❌You must be an admin to use this command")
+				return nil
+			}
+
+			for _, arg := range args {
+				channelsToJoin = append(channelsToJoin, struct {
+					ID   string
+					Name string
+				}{ID: arg, Name: arg})
+			}
+		} else {
+			channelsToJoin = append(channelsToJoin, struct {
+				ID   string
+				Name string
+			}{ID: message.Channel, Name: message.Channel})
+		}
+
+		err = database.InsertUsers(tx, true, channelsToJoin...)
 		if err != nil {
 			sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
-			return err
 		}
 
 		var (
@@ -45,9 +74,11 @@ var join = Command{
 			commandNames = append(commandNames, name)
 		}
 
-		err = database.InsertUserCommands(tx, message.Chatter.Name, commandNames...)
-		if err != nil {
-			return err
+		for _, channel := range channelsToJoin {
+			err = database.InsertUserCommands(tx, channel.ID, commandNames...)
+			if err != nil {
+				return err
+			}
 		}
 
 		err = tx.Commit()
@@ -56,7 +87,7 @@ var join = Command{
 		}
 
 		log.Info().Str("channel", message.Channel).Msg("successfully joined channel")
-		sender.Say(message.Channel, fmt.Sprintf("✅ Joined channel %s", message.Channel))
+		sender.Say(message.Channel, "✅ Joined channel(s)")
 		return nil
 	},
 }

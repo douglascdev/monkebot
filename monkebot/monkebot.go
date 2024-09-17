@@ -33,7 +33,7 @@ func NewMonkebot(cfg config.Config, db *sql.DB) (*Monkebot, error) {
 		startTime := time.Now()
 		normalizedMsg := command.NewMessage(message, db)
 		if err := command.HandleCommands(normalizedMsg, mb, &cfg); err != nil {
-			log.Info().Err(err)
+			log.Err(err).Msg("command failed")
 		}
 		internalLatency := fmt.Sprintf("%d ms", time.Since(startTime).Milliseconds())
 		log.Info().
@@ -62,6 +62,7 @@ func NewMonkebot(cfg config.Config, db *sql.DB) (*Monkebot, error) {
 			if err != nil {
 				log.Err(err).Msg("failed to get saved channels")
 			}
+			mb.Join(savedChannels...)
 			log.Info().Strs("channels", savedChannels).Msg("successfully joined saved channels")
 			return
 		}

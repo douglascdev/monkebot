@@ -55,6 +55,7 @@ var Commands = []Command{
 	ping,
 	senzpTest,
 	join,
+	setLevel,
 }
 
 var commandMap = createCommandMap(Commands)
