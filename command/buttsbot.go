@@ -2,7 +2,7 @@ package command
 
 import (
 	"fmt"
-	"time"
+	"monkebot/database"
 )
 
 var buttsbot = Command{
@@ -12,8 +12,36 @@ var buttsbot = Command{
 	Cooldown:    5,
 	NoPrefix:    false,
 	Execute: func(message *Message, sender MessageSender, args []string) error {
-		latency := fmt.Sprintf("%d ms", time.Since(message.Time).Milliseconds())
-		sender.Say(message.Channel, fmt.Sprintf("🐒 Pong! Latency: %s", latency))
+		if len(args) != 2 || (args[1] != "on" && args[1] != "off") {
+			sender.Say(message.Chatter.Name, "Usage: buttsbot <on | off>")
+			return nil
+		}
+
+		if !(message.Chatter.IsMod || message.Chatter.IsBroadcaster) {
+			sender.Say(message.Channel, "❌You must be a moderator to use this command")
+			return nil
+		}
+
+		tx, err := message.DB.Begin()
+		if err != nil {
+			sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
+			return err
+		}
+		defer tx.Rollback()
+
+		err = database.UpdateIsUserCommandEnabled(tx, args[1] == "on", message.RoomID, "buttsbot")
+		if err != nil {
+			sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
+			return err
+		}
+
+		err = tx.Commit()
+		if err != nil {
+			sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
+			return err
+		}
+
+		sender.Say(message.Channel, fmt.Sprintf("✅Set command buttsbot to '%s'", args[1]))
 		return nil
 	},
 }

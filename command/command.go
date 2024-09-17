@@ -29,6 +29,10 @@ type Command struct {
 type Chatter struct {
 	Name string
 	ID   string
+
+	IsMod         bool
+	IsVIP         bool
+	IsBroadcaster bool
 }
 
 // Message normalized to be platform agnostic
@@ -36,6 +40,7 @@ type Message struct {
 	Message string
 	Time    time.Time
 	Channel string
+	RoomID  string
 	Chatter Chatter
 	DB      *sql.DB
 }
@@ -45,9 +50,13 @@ func NewMessage(msg twitch.PrivateMessage, db *sql.DB) *Message {
 		Message: msg.Message,
 		Time:    msg.Time,
 		Channel: msg.Channel,
+		RoomID:  msg.RoomID,
 		Chatter: Chatter{
-			Name: msg.User.Name,
-			ID:   msg.User.ID,
+			Name:          msg.User.Name,
+			ID:            msg.User.ID,
+			IsMod:         msg.Tags["mod"] == "mod",
+			IsVIP:         msg.Tags["vip"] == "vip",
+			IsBroadcaster: msg.RoomID == msg.User.ID,
 		},
 		DB: db,
 	}
@@ -59,6 +68,7 @@ var Commands = []Command{
 	join,
 	part,
 	setLevel,
+	buttsbot,
 }
 
 var commandMap = createCommandMap(Commands)

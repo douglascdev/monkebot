@@ -332,6 +332,29 @@ func UpdateIsBotJoined(tx *sql.Tx, joined bool, userIDs ...string) error {
 	return nil
 }
 
+func UpdateIsUserCommandEnabled(tx *sql.Tx, enabled bool, channelID string, commandName string) error {
+	result, err := tx.Exec(`
+			UPDATE user_command SET is_enabled = ?
+			WHERE command_id = (
+				SELECT id FROM command WHERE name = 'buttsbot'
+			) AND user_id = ?`,
+		enabled, channelID)
+	if err != nil {
+		return fmt.Errorf("failed to update is_user_command_enabled: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected != 1 {
+		return fmt.Errorf("invalid number of affected rows: %d", rowsAffected)
+	}
+
+	return nil
+}
+
 // Run migrations in the database.
 // If the migration succeeds, the version in DBConfig is updated to the current version
 // and should be saved in the config file.
