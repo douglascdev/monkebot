@@ -7,6 +7,7 @@ import (
 	"monkebot/config"
 	"monkebot/database"
 	"monkebot/twitchapi"
+	"slices"
 	"time"
 
 	"github.com/douglascdev/buttifier"
@@ -27,6 +28,8 @@ func NewMonkebot(cfg config.Config, db *sql.DB) (*Monkebot, error) {
 	client := twitch.NewClient(cfg.Login, "oauth:"+cfg.TwitchToken)
 
 	butt, err := buttifier.New()
+	butt.ButtificationProbability = 0.1
+	butt.ButtificationRate = 0.2
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize buttifier: %w", err)
 	}
@@ -40,7 +43,7 @@ func NewMonkebot(cfg config.Config, db *sql.DB) (*Monkebot, error) {
 
 	client.OnPrivateMessage(func(message twitch.PrivateMessage) {
 		startTime := time.Now()
-		normalizedMsg := command.NewMessage(message, db)
+		normalizedMsg := command.NewMessage(message, db, &cfg)
 		if err := command.HandleCommands(normalizedMsg, mb, &cfg); err != nil {
 			log.Err(err).Msg("command failed")
 		}
@@ -111,6 +114,17 @@ func NewMonkebot(cfg config.Config, db *sql.DB) (*Monkebot, error) {
 		if err != nil {
 			log.Err(err).Msg("failed to insert initial users in the database")
 			return
+		}
+
+		for _, user := range users {
+			if slices.Contains(cfg.AdminUsernames, user.Name) {
+				continue
+			}
+			err = database.UpdateUserPermission(tx, user.ID, "admin")
+			if err != nil {
+				log.Err(err).Str("name", user.Name).Str("id", user.ID).Msg("failed to insert user commands for user")
+				return
+			}
 		}
 
 		for _, twitchUser := range twitchUsers {

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"monkebot/database"
+	"monkebot/twitchapi"
 	"strings"
 
 	"github.com/rs/zerolog/log"
@@ -47,11 +48,21 @@ var join = Command{
 				return nil
 			}
 
-			for _, arg := range args[1:] {
+			twitchUsers, err := twitchapi.GetUserByName(message.Cfg, args[1:]...)
+			if err != nil {
+				sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
+				return err
+			}
+			channelsToJoin = make([]struct {
+				ID   string
+				Name string
+			}, 0, len(twitchUsers))
+
+			for _, user := range twitchUsers {
 				channelsToJoin = append(channelsToJoin, struct {
 					ID   string
 					Name string
-				}{ID: arg, Name: arg})
+				}{ID: user.ID, Name: user.Name})
 			}
 		} else {
 			channelsToJoin = append(channelsToJoin, struct {

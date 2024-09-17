@@ -47,17 +47,19 @@ type Message struct {
 	Message string
 	Time    time.Time
 	Channel string
+	Cfg     *config.Config
 	RoomID  string
 	Chatter Chatter
 	DB      *sql.DB
 }
 
-func NewMessage(msg twitch.PrivateMessage, db *sql.DB) *Message {
+func NewMessage(msg twitch.PrivateMessage, db *sql.DB, cfg *config.Config) *Message {
 	return &Message{
 		Message: msg.Message,
 		Time:    msg.Time,
 		Channel: msg.Channel,
 		RoomID:  msg.RoomID,
+		Cfg:     cfg,
 		Chatter: Chatter{
 			Name:          msg.User.Name,
 			ID:            msg.User.ID,

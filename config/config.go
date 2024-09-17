@@ -18,6 +18,7 @@ type Config struct {
 	InitialChannels []string `json:"InitialChannels"`
 	Prefix          string   `json:"Prefix"`
 	UserID          string   `json:"UserID"`
+	AdminUsernames  []string `json:"AdminUsernames"`
 	Login           string   `json:"Login"`
 	ClientID        string   `json:"ClientID"`
 	DBConfig        DBConfig `json:"DBConfig"`
