@@ -3,5 +3,5 @@
 - Save a template as config.json if the file does not exist
 - Test to ensure templates have all Config fields
 - Better logging
-- Add join command
+- Add join and part commands
 - Add setlevel command

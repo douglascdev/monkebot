@@ -12,6 +12,8 @@ import (
 
 type MessageSender interface {
 	Say(channel string, message string)
+	Join(channels ...string)
+	Part(channels ...string)
 }
 
 type Command struct {
@@ -55,6 +57,7 @@ var Commands = []Command{
 	ping,
 	senzpTest,
 	join,
+	part,
 	setLevel,
 }
 

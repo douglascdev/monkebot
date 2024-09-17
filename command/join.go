@@ -2,15 +2,17 @@ package command
 
 import (
 	"database/sql"
+	"fmt"
 	"monkebot/database"
+	"strings"
 
 	"github.com/rs/zerolog/log"
 )
 
 var join = Command{
 	Name:        "join",
-	Aliases:     []string{"j"},
-	Usage:       "join",
+	Aliases:     []string{},
+	Usage:       "join | join <channel>",
 	Description: "Join the message author's channel",
 	Cooldown:    5,
 	NoPrefix:    false,
@@ -26,7 +28,7 @@ var join = Command{
 			Name string
 		}
 
-		if len(args) > 0 {
+		if len(args) > 1 {
 			var isAdmin bool
 			isAdmin, err = database.SelectIsUserAdmin(tx, message.Chatter.ID)
 			if err != nil {
@@ -38,7 +40,7 @@ var join = Command{
 				return nil
 			}
 
-			for _, arg := range args {
+			for _, arg := range args[1:] {
 				channelsToJoin = append(channelsToJoin, struct {
 					ID   string
 					Name string
@@ -86,8 +88,13 @@ var join = Command{
 			return err
 		}
 
-		log.Info().Str("channel", message.Channel).Msg("successfully joined channel")
-		sender.Say(message.Channel, "✅ Joined channel(s)")
+		log.Info().Msg("successfully joined channels")
+		channelNames := make([]string, len(channelsToJoin))
+		for i, channel := range channelsToJoin {
+			channelNames[i] = channel.Name
+		}
+		sender.Join(channelNames...)
+		sender.Say(message.Channel, fmt.Sprintf("✅ Joined channel(s) %s", strings.Join(channelNames, ", ")))
 		return nil
 	},
 }

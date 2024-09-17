@@ -14,6 +14,9 @@ func (m *MockSender) Say(channel string, message string) {
 	m.responses = append(m.responses, message)
 }
 
+func (m *MockSender) Join(channels ...string) {}
+func (m *MockSender) Part(channels ...string) {}
+
 func TestCommandMap(t *testing.T) {
 	if len(commandMap) != len(Commands) {
 		t.Errorf("expected %d commands, got %d", len(Commands), len(commandMap))

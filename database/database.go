@@ -316,6 +316,22 @@ func UpdateUserPermission(tx *sql.Tx, userID string, permissionName string) erro
 	return nil
 }
 
+func UpdateIsBotJoined(tx *sql.Tx, joined bool, userIDs ...string) error {
+	stmt, err := tx.Prepare("UPDATE user SET bot_is_joined = ? WHERE id = ? ")
+	if err != nil {
+		return fmt.Errorf("failed to update is_bot_joined for user %s: %w", userIDs, err)
+	}
+
+	for _, userID := range userIDs {
+		_, err = stmt.Exec(joined, userID)
+		if err != nil {
+			return fmt.Errorf("failed to update is_bot_joined for user %s: %w", userID, err)
+		}
+	}
+
+	return nil
+}
+
 // Run migrations in the database.
 // If the migration succeeds, the version in DBConfig is updated to the current version
 // and should be saved in the config file.
