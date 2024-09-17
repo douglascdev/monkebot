@@ -57,6 +57,7 @@ func ConfigTemplateJSON() ([]byte, error) {
 		TwitchToken:     "YOUR_OAUTH_TOKEN_HERE",
 		Prefix:          "!",
 		UserID:          "YOUR_USER_ID_HERE",
+		AdminUsernames:  []string{"hash_table"},
 		Login:           "YOUR_LOGIN_HERE",
 		ClientID:        "YOUR_CLIENT_ID_HERE",
 		DBConfig: DBConfig{
