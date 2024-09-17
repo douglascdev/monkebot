@@ -8,14 +8,14 @@ import (
 )
 
 var setLevel = Command{
-	Name:           "setlevel",
-	Aliases:        []string{"permission", "perm", "level"},
-	Usage:          "setlevel <username> <permission>",
-	Description:    "Responds with pong and latency to twitch in milliseconds",
-	Cooldown:       5,
-	NoPrefix:       false,
-	NoPrefixRegexp: nil,
-	CanDisable:     false,
+	Name:              "setlevel",
+	Aliases:           []string{"permission", "perm", "level"},
+	Usage:             "setlevel <username> <permission>",
+	Description:       "Responds with pong and latency to twitch in milliseconds",
+	Cooldown:          5,
+	NoPrefix:          false,
+	NoPrefixShouldRun: nil,
+	CanDisable:        false,
 	Execute: func(message *Message, sender MessageSender, args []string) error {
 		tx, err := message.DB.Begin()
 		defer tx.Rollback()

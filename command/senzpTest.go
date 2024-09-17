@@ -6,15 +6,21 @@ import (
 	"unicode"
 )
 
+var expr = regexp.MustCompile(`^senzpTest`)
+
+func shouldRun(message *Message, sender MessageSender, args []string) bool {
+	return expr.MatchString(message.Message)
+}
+
 var senzpTest = Command{
-	Name:           "senzpTest",
-	Aliases:        []string{},
-	Usage:          "senzpTest <text>",
-	Description:    "Translates senzp language to english",
-	Cooldown:       5,
-	NoPrefix:       true,
-	NoPrefixRegexp: regexp.MustCompile("^senzpTest"),
-	CanDisable:     true,
+	Name:              "senzpTest",
+	Aliases:           []string{},
+	Usage:             "senzpTest <text>",
+	Description:       "Translates senzp language to english",
+	Cooldown:          5,
+	NoPrefix:          true,
+	NoPrefixShouldRun: shouldRun,
+	CanDisable:        true,
 	Execute: func(message *Message, sender MessageSender, args []string) error {
 		cleanString := func(s string) string {
 			cleaned := []rune{}

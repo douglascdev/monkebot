@@ -9,14 +9,14 @@ import (
 )
 
 var part = Command{
-	Name:           "part",
-	Aliases:        []string{"leave"},
-	Usage:          "part <channel>",
-	Description:    "Leave the message author's channel",
-	Cooldown:       5,
-	NoPrefix:       false,
-	NoPrefixRegexp: nil,
-	CanDisable:     false,
+	Name:              "part",
+	Aliases:           []string{"leave"},
+	Usage:             "part <channel>",
+	Description:       "Leave the message author's channel",
+	Cooldown:          5,
+	NoPrefix:          false,
+	NoPrefixShouldRun: nil,
+	CanDisable:        false,
 	Execute: func(message *Message, sender MessageSender, args []string) error {
 		tx, err := message.DB.Begin()
 		if err != nil {

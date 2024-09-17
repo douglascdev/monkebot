@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"monkebot/config"
 	"monkebot/database"
-	"regexp"
 	"strings"
 	"time"
 
@@ -20,15 +19,15 @@ type MessageSender interface {
 }
 
 type Command struct {
-	Name           string
-	Aliases        []string
-	Usage          string
-	Description    string
-	Cooldown       int
-	NoPrefix       bool
-	NoPrefixRegexp *regexp.Regexp
-	CanDisable     bool
-	Execute        func(message *Message, sender MessageSender, args []string) error
+	Name              string
+	Aliases           []string
+	Usage             string
+	Description       string
+	Cooldown          int
+	NoPrefix          bool
+	NoPrefixShouldRun func(message *Message, sender MessageSender, args []string) bool
+	CanDisable        bool
+	Execute           func(message *Message, sender MessageSender, args []string) error
 }
 
 type Chatter struct {
@@ -77,21 +76,26 @@ var Commands = []Command{
 }
 
 var (
-	commandMap         map[string]Command
-	commandMapNoPrefix map[string]Command
+	commandMap       map[string]Command
+	commandsNoPrefix []Command
 )
 
 func init() {
-	commandMap = createCommandMap(Commands, true)
-	commandMapNoPrefix = createCommandMap(Commands, false)
+	commandMap = createCommandMap(Commands)
+
+	for _, cmd := range Commands {
+		if cmd.NoPrefix {
+			commandsNoPrefix = append(commandsNoPrefix, cmd)
+		}
+	}
 }
 
 // Maps command names and aliases to Command structs
 // If prefixedOnly is true, only commands with NoPrefix=false will be added
-func createCommandMap(commands []Command, prefixedOnly bool) map[string]Command {
+func createCommandMap(commands []Command) map[string]Command {
 	cmdMap := make(map[string]Command)
 	for _, cmd := range commands {
-		if prefixedOnly == cmd.NoPrefix {
+		if cmd.NoPrefix {
 			continue
 		}
 		cmdMap[cmd.Name] = cmd
@@ -102,20 +106,66 @@ func createCommandMap(commands []Command, prefixedOnly bool) map[string]Command 
 	return cmdMap
 }
 
+func isCommandEnabled(message *Message, cmd Command) (bool, error) {
+	if !cmd.CanDisable {
+		return true, nil
+	}
+
+	tx, err := message.DB.Begin()
+	if err != nil {
+		return false, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	var enabled bool
+	enabled, err = database.SelectIsUserCommandEnabled(tx, message.RoomID, cmd.Name)
+	if err != nil {
+		return false, err
+	}
+
+	return enabled, nil
+}
+
 func HandleCommands(message *Message, sender MessageSender, config *config.Config) error {
-	var args []string
+	var (
+		args []string
+		err  error
+	)
 
 	hasPrefix := strings.HasPrefix(message.Message, config.Prefix)
 	if hasPrefix {
 		args = strings.Split(message.Message[len(config.Prefix):], " ")
 	} else {
 		args = strings.Split(message.Message, " ")
+
+		// check if command is no prefix
+		for _, noPrefixCmd := range commandsNoPrefix {
+			if noPrefixCmd.NoPrefixShouldRun != nil && noPrefixCmd.NoPrefixShouldRun(message, sender, args) {
+				var isEnabled bool
+				isEnabled, err = isCommandEnabled(message, noPrefixCmd)
+				if err != nil {
+					return err
+				}
+				if !isEnabled {
+					log.Debug().Str("command", noPrefixCmd.Name).Str("channel", message.Channel).Msg("ignored disabled no-prefix command")
+					return nil
+				}
+
+				err = noPrefixCmd.Execute(message, sender, args)
+				if err != nil {
+					return err
+				}
+
+				break
+			}
+		}
 	}
 
 	if cmd, ok := commandMap[args[0]]; ok {
 		if cmd.CanDisable {
 
-			tx, err := message.DB.Begin()
+			var tx *sql.Tx
+			tx, err = message.DB.Begin()
 			if err != nil {
 				return fmt.Errorf("failed to begin transaction: %w", err)
 			}

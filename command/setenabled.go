@@ -6,13 +6,13 @@ import (
 )
 
 var setenabled = Command{
-	Name:           "setenabled",
-	Usage:          "setenabled <command> <on | off>",
-	Description:    "Enables or disables a command for all users in the channel",
-	Cooldown:       5,
-	NoPrefix:       false,
-	NoPrefixRegexp: nil,
-	CanDisable:     false,
+	Name:              "setenabled",
+	Usage:             "setenabled <command> <on | off>",
+	Description:       "Enables or disables a command for all users in the channel",
+	Cooldown:          5,
+	NoPrefix:          false,
+	NoPrefixShouldRun: nil,
+	CanDisable:        false,
 	Execute: func(message *Message, sender MessageSender, args []string) error {
 		if len(args) != 3 || (args[2] != "on" && args[2] != "off") {
 			sender.Say(message.Chatter.Name, "Usage: setenabled <command> <on | off>")
