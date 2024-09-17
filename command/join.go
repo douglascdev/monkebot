@@ -30,7 +30,12 @@ var join = Command{
 			Name string
 		}
 
-		if len(args) > 1 {
+		if len(args) == 2 && message.Chatter.Name == args[1] {
+			channelsToJoin = append(channelsToJoin, struct {
+				ID   string
+				Name string
+			}{ID: message.Chatter.ID, Name: message.Chatter.Name})
+		} else if len(args) > 1 {
 			var isAdmin bool
 			isAdmin, err = database.SelectIsUserAdmin(tx, message.Chatter.ID)
 			if err != nil {
@@ -52,12 +57,13 @@ var join = Command{
 			channelsToJoin = append(channelsToJoin, struct {
 				ID   string
 				Name string
-			}{ID: message.Channel, Name: message.Channel})
+			}{ID: message.Chatter.ID, Name: message.Chatter.Name})
 		}
 
 		err = database.InsertUsers(tx, true, channelsToJoin...)
 		if err != nil {
 			sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
+			return err
 		}
 
 		var (
