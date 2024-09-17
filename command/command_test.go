@@ -17,8 +17,12 @@ func (m *MockSender) Say(channel string, message string) {
 func (m *MockSender) Join(channels ...string) {}
 func (m *MockSender) Part(channels ...string) {}
 
-func (m *MockSender) Buttify(message string) (string, bool) {
-	return message, true
+func (m *MockSender) Buttify(message string) string {
+	return message
+}
+
+func (m *MockSender) ShouldButtify() bool {
+	return true
 }
 
 func TestCommandMap(t *testing.T) {

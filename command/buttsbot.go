@@ -7,17 +7,13 @@ var buttsbot = Command{
 	Description: "Replaces random syllables with butt",
 	Cooldown:    5,
 	NoPrefix:    true,
-	// TODO: this affects the probability, Buttify shoudn't have to run twice
 	NoPrefixShouldRun: func(message *Message, sender MessageSender, args []string) bool {
-		_, didButtify := sender.Buttify(message.Message)
-		return didButtify
+		return sender.ShouldButtify()
 	},
 	CanDisable: false,
 	Execute: func(message *Message, sender MessageSender, args []string) error {
-		newSentence, didButtify := sender.Buttify(message.Message)
-		if didButtify {
-			sender.Say(message.Channel, newSentence)
-		}
+		newSentence := sender.Buttify(message.Message)
+		sender.Say(message.Channel, newSentence)
 		return nil
 	},
 }

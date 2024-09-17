@@ -18,7 +18,8 @@ type MessageSender interface {
 	Join(channels ...string)
 	Part(channels ...string)
 
-	Buttify(message string) (string, bool)
+	Buttify(message string) string
+	ShouldButtify() bool
 }
 
 type Command struct {

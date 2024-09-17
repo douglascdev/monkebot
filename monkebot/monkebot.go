@@ -28,7 +28,7 @@ func NewMonkebot(cfg config.Config, db *sql.DB) (*Monkebot, error) {
 	client := twitch.NewClient(cfg.Login, "oauth:"+cfg.TwitchToken)
 
 	butt, err := buttifier.New()
-	butt.ButtificationProbability = 0.1
+	butt.ButtificationProbability = 0.05
 	butt.ButtificationRate = 0.2
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize buttifier: %w", err)
@@ -181,6 +181,10 @@ func (t *Monkebot) Say(channel string, message string) {
 	t.TwitchClient.Say(channel, invisPrefix+message)
 }
 
-func (t *Monkebot) Buttify(message string) (string, bool) {
+func (t *Monkebot) ShouldButtify() bool {
+	return t.buttifier.ToButtOrNotToButt()
+}
+
+func (t *Monkebot) Buttify(message string) string {
 	return t.buttifier.ButtifySentence(message)
 }
