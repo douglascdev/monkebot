@@ -18,8 +18,13 @@ func (m *MockSender) Join(channels ...string) {}
 func (m *MockSender) Part(channels ...string) {}
 
 func TestCommandMap(t *testing.T) {
-	if len(commandMap) != len(Commands) {
-		t.Errorf("expected %d commands, got %d", len(Commands), len(commandMap))
+	expected, got := len(Commands), len(commandMap)
+	for _, cmd := range Commands {
+		expected += len(cmd.Aliases)
+	}
+
+	if expected != got {
+		t.Errorf("expected %d commands, got %d", expected, got)
 	}
 
 	for _, cmd := range Commands {
