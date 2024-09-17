@@ -96,6 +96,9 @@ var join = Command{
 		}
 		sender.Join(channelNames...)
 		sender.Say(message.Channel, fmt.Sprintf("✅ Joined channel(s) %s", strings.Join(channelNames, ", ")))
+		for _, channel := range channelsToJoin {
+			sender.Say(channel.Name, "ola")
+		}
 		return nil
 	},
 }
