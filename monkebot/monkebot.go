@@ -9,6 +9,7 @@ import (
 	"monkebot/twitchapi"
 	"time"
 
+	"github.com/douglascdev/buttifier"
 	"github.com/rs/zerolog/log"
 
 	"github.com/Potat-Industries/go-potatFilters"
@@ -19,14 +20,22 @@ type Monkebot struct {
 	TwitchClient *twitch.Client
 	Cfg          config.Config
 	db           *sql.DB
+	buttifier    *buttifier.Buttifier
 }
 
 func NewMonkebot(cfg config.Config, db *sql.DB) (*Monkebot, error) {
 	client := twitch.NewClient(cfg.Login, "oauth:"+cfg.TwitchToken)
+
+	butt, err := buttifier.New()
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize buttifier: %w", err)
+	}
+
 	mb := &Monkebot{
 		TwitchClient: client,
 		Cfg:          cfg,
 		db:           db,
+		buttifier:    butt,
 	}
 
 	client.OnPrivateMessage(func(message twitch.PrivateMessage) {
@@ -156,4 +165,8 @@ func (t *Monkebot) Say(channel string, message string) {
 	}
 	const invisPrefix = "󠀀�" // prevents command injection
 	t.TwitchClient.Say(channel, invisPrefix+message)
+}
+
+func (t *Monkebot) Buttify(message string) (string, bool) {
+	return t.buttifier.ButtifySentence(message)
 }

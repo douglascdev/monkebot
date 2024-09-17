@@ -17,6 +17,10 @@ func (m *MockSender) Say(channel string, message string) {
 func (m *MockSender) Join(channels ...string) {}
 func (m *MockSender) Part(channels ...string) {}
 
+func (m *MockSender) Buttify(message string) (string, bool) {
+	return message, true
+}
+
 func TestCommandMap(t *testing.T) {
 	expected, got := 0, len(commandMap)
 	for _, cmd := range Commands {

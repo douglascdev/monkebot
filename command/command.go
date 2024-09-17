@@ -14,8 +14,11 @@ import (
 
 type MessageSender interface {
 	Say(channel string, message string)
+
 	Join(channels ...string)
 	Part(channels ...string)
+
+	Buttify(message string) (string, bool)
 }
 
 type Command struct {
@@ -73,6 +76,7 @@ var Commands = []Command{
 	part,
 	setLevel,
 	setenabled,
+	buttsbot,
 }
 
 var (
