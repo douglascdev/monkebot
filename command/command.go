@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"monkebot/config"
 	"monkebot/database"
+	"regexp"
 	"strings"
 	"time"
 
@@ -19,14 +20,15 @@ type MessageSender interface {
 }
 
 type Command struct {
-	Name        string
-	Aliases     []string
-	Usage       string
-	Description string
-	Cooldown    int
-	NoPrefix    bool
-	CanDisable  bool
-	Execute     func(message *Message, sender MessageSender, args []string) error
+	Name           string
+	Aliases        []string
+	Usage          string
+	Description    string
+	Cooldown       int
+	NoPrefix       bool
+	NoPrefixRegexp *regexp.Regexp
+	CanDisable     bool
+	Execute        func(message *Message, sender MessageSender, args []string) error
 }
 
 type Chatter struct {
@@ -74,16 +76,24 @@ var Commands = []Command{
 	setenabled,
 }
 
-var commandMap map[string]Command
+var (
+	commandMap         map[string]Command
+	commandMapNoPrefix map[string]Command
+)
 
 func init() {
-	commandMap = createCommandMap(Commands)
+	commandMap = createCommandMap(Commands, true)
+	commandMapNoPrefix = createCommandMap(Commands, false)
 }
 
 // Maps command names and aliases to Command structs
-func createCommandMap(commands []Command) map[string]Command {
+// If prefixedOnly is true, only commands with NoPrefix=false will be added
+func createCommandMap(commands []Command, prefixedOnly bool) map[string]Command {
 	cmdMap := make(map[string]Command)
 	for _, cmd := range commands {
+		if prefixedOnly == cmd.NoPrefix {
+			continue
+		}
 		cmdMap[cmd.Name] = cmd
 		for _, alias := range cmd.Aliases {
 			cmdMap[alias] = cmd

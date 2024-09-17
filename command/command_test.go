@@ -18,9 +18,12 @@ func (m *MockSender) Join(channels ...string) {}
 func (m *MockSender) Part(channels ...string) {}
 
 func TestCommandMap(t *testing.T) {
-	expected, got := len(Commands), len(commandMap)
+	expected, got := 0, len(commandMap)
 	for _, cmd := range Commands {
-		expected += len(cmd.Aliases)
+		if cmd.NoPrefix {
+			continue
+		}
+		expected += len(cmd.Aliases) + 1
 	}
 
 	if expected != got {
@@ -28,13 +31,16 @@ func TestCommandMap(t *testing.T) {
 	}
 
 	for _, cmd := range Commands {
+		if cmd.NoPrefix {
+			continue
+		}
 		if _, ok := commandMap[cmd.Name]; !ok {
 			t.Errorf("command '%s' not found in commandMap", cmd.Name)
 		}
 
 		for _, alias := range cmd.Aliases {
 			if _, ok := commandMap[alias]; !ok {
-				t.Errorf("command alias '%s' not found in commandMap", alias)
+				t.Errorf("alias '%s' not found in commandMap", alias)
 			}
 		}
 	}

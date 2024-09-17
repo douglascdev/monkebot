@@ -10,13 +10,14 @@ import (
 )
 
 var join = Command{
-	Name:        "join",
-	Aliases:     []string{},
-	Usage:       "join | join <channel>",
-	Description: "Join the message author's channel",
-	Cooldown:    5,
-	NoPrefix:    false,
-	CanDisable:  false,
+	Name:           "join",
+	Aliases:        []string{},
+	Usage:          "join | join <channel>",
+	Description:    "Join the message author's channel",
+	Cooldown:       5,
+	NoPrefix:       false,
+	NoPrefixRegexp: nil,
+	CanDisable:     false,
 	Execute: func(message *Message, sender MessageSender, args []string) error {
 		tx, err := message.DB.Begin()
 		if err != nil {
