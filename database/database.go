@@ -37,6 +37,14 @@ func (m *DBMigrations) Less(i, j int) bool {
 var Migrations = DBMigrations{
 	Migrations: []DBMigration{
 		{Version: 1, Stmts: CurrentSchema()},
+		{Version: 2, Stmts: []string{
+			"INSERT INTO command (name) VALUES ('butt')",
+			`INSERT INTO user_command (user_id, command_id, is_enabled)
+				SELECT id, (
+					SELECT c.id FROM command c WHERE c.name = 'butt'
+				), true FROM user
+			`,
+		}},
 	},
 }
 

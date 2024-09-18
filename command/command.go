@@ -83,6 +83,7 @@ var Commands = []Command{
 	setLevel,
 	setenabled,
 	buttsbot,
+	butt,
 }
 
 var (
