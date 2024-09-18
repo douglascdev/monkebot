@@ -13,7 +13,9 @@ var buttsbot = Command{
 	CanDisable: false,
 	Execute: func(message *Message, sender MessageSender, args []string) error {
 		newSentence := sender.Buttify(message.Message)
-		sender.Say(message.Channel, newSentence)
+		if newSentence != message.Message {
+			sender.Say(message.Channel, newSentence)
+		}
 		return nil
 	},
 }
