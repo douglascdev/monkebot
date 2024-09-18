@@ -85,7 +85,7 @@ func TestInitDB(t *testing.T) {
 	if err != nil {
 		t.Errorf("failed to load written config: %v", err)
 	}
-	if cfg.DBConfig.Version != 1 {
+	if cfg.DBConfig.Version != Migrations.Migrations[len(Migrations.Migrations)-1].Version {
 		t.Errorf("migration failed to update database version, expected 1, got %d", cfg.DBConfig.Version)
 	}
 }
