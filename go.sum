@@ -9,6 +9,8 @@ github.com/douglascdev/buttifier v0.1.1 h1:rbB2nibb/FYCkIyOlXi602yFfeu7KdiBuO5PI
 github.com/douglascdev/buttifier v0.1.1/go.mod h1:NwWm2htIvguVOd+IJPZYlIH9Y5x6969bbswtFmPsZ0E=
 github.com/douglascdev/buttifier v0.1.2 h1:BYrAEjUWUMgcLq96HGUzmo0BlcluamobRkA1kreYYHM=
 github.com/douglascdev/buttifier v0.1.2/go.mod h1:NwWm2htIvguVOd+IJPZYlIH9Y5x6969bbswtFmPsZ0E=
+github.com/douglascdev/buttifier v0.1.3 h1:WUBQ8tF+v4jWfmiJ3ro9cxslDQ8wX7/NUmbia8CzktI=
+github.com/douglascdev/buttifier v0.1.3/go.mod h1:NwWm2htIvguVOd+IJPZYlIH9Y5x6969bbswtFmPsZ0E=
 github.com/gempir/go-twitch-irc/v4 v4.0.0 h1:sHVIvbWOv9nHXGEErilclxASv0AaQEr/r/f9C0B9aO8=
 github.com/gempir/go-twitch-irc/v4 v4.0.0/go.mod h1:QsOMMAk470uxQ7EYD9GJBGAVqM/jDrXBNbuePfTauzg=
 github.com/godbus/dbus/v5 v5.0.4/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
