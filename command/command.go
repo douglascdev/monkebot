@@ -23,15 +23,17 @@ type MessageSender interface {
 }
 
 type Command struct {
-	Name              string
-	Aliases           []string
-	Usage             string
-	Description       string
-	Cooldown          int
-	NoPrefix          bool
-	NoPrefixShouldRun func(message *Message, sender MessageSender, args []string) bool
-	CanDisable        bool
-	Execute           func(message *Message, sender MessageSender, args []string) error
+	Name        string
+	Aliases     []string
+	Usage       string
+	Description string
+	Cooldown    int
+	NoPrefix    bool
+	CanDisable  bool
+
+	// `json:"-"` excludes these 2 fields from being serialized into the command list json
+	NoPrefixShouldRun func(message *Message, sender MessageSender, args []string) bool  `json:"-"`
+	Execute           func(message *Message, sender MessageSender, args []string) error `json:"-"`
 }
 
 type Chatter struct {

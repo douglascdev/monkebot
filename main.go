@@ -2,7 +2,9 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"flag"
+	"monkebot/command"
 	"monkebot/config"
 	"monkebot/database"
 	"monkebot/monkebot"
@@ -17,6 +19,7 @@ func main() {
 	// parse command-line arguments
 	cfgPath := flag.String("cfg", "config.json", "path to config file")
 	debug := flag.Bool("debug", false, "sets log level to debug")
+	generateCmdList := flag.String("cmd-list", "", "ignores all other args and generates command list json to the specified path")
 	flag.Parse()
 
 	// set up logging
@@ -30,6 +33,24 @@ func main() {
 	if *debug {
 		log.Debug().Msg("debug mode on")
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
+
+	// generate command list json
+	if *generateCmdList != "" {
+		log.Info().Str("path", *generateCmdList).Msg("generating command list json")
+		var (
+			commandListData []byte
+			err             error
+		)
+		commandListData, err = json.MarshalIndent(command.Commands, "", "  ")
+		if err != nil {
+			log.Fatal().Err(err).Msg("failed to generate command list json")
+		}
+		if err := os.WriteFile(*generateCmdList, commandListData, 0644); err != nil {
+			log.Fatal().Str("path", *generateCmdList).Err(err).Msg("failed to write command list json")
+		}
+		log.Info().Str("path", *generateCmdList).Msg("command list json generated successfully")
+		os.Exit(0)
 	}
 
 	_, err := os.Stat(*cfgPath)
