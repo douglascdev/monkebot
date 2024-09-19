@@ -86,6 +86,7 @@ var Commands = []Command{
 	setenabled,
 	buttsbot,
 	butt,
+	help,
 }
 
 var (
@@ -195,12 +196,7 @@ func HandleCommands(message *Message, sender MessageSender, config *config.Confi
 				return nil
 			}
 		}
-		if len(args) > 1 {
-			argsStart := strings.Index(message.Message, " ")
-			args = strings.Split(message.Message[argsStart:], " ")
-		} else {
-			args = []string{}
-		}
+
 		if err := cmd.Execute(message, sender, args); err != nil {
 			return err
 		}

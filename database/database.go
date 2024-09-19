@@ -45,6 +45,14 @@ var Migrations = DBMigrations{
 				), true FROM user
 			`,
 		}},
+		{Version: 3, Stmts: []string{
+			"INSERT INTO command (name) VALUES ('help')",
+			`INSERT INTO user_command (user_id, command_id, is_enabled)
+				SELECT id, (
+					SELECT c.id FROM command c WHERE c.name = 'help'
+				), true FROM user
+			`,
+		}},
 	},
 }
 
@@ -98,10 +106,6 @@ func InitDB(driver string, dataSourceName string, cfgReader io.Reader, cfgWriter
 	}
 
 	return db, nil
-}
-
-func IsSchemaUpToDate(cfg *config.Config) bool {
-	return cfg.DBConfig.Version == len(Migrations.Migrations)
 }
 
 func CurrentSchema() []string {
