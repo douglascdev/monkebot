@@ -25,6 +25,7 @@ var join = Command{
 			sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
 			return err
 		}
+		defer tx.Rollback()
 
 		var channelsToJoin []struct {
 			ID   string
