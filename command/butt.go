@@ -18,7 +18,7 @@ var butt = Command{
 	},
 	CanDisable: true,
 	Execute: func(message *Message, sender MessageSender, args []string) error {
-		sender.Say(message.Channel, " butt")
+		sender.Say(message.Channel, "butt")
 		return nil
 	},
 }

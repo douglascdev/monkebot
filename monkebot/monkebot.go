@@ -181,7 +181,7 @@ func (t *Monkebot) Say(channel string, message string) {
 		t.TwitchClient.Say(channel, "⚠ Message withheld for containing a banned phrase...")
 		return
 	}
-	const invisPrefix = "󠀀�" // prevents command injection
+	const invisPrefix = "󠀀 " // prevents command injection
 	t.TwitchClient.Say(channel, invisPrefix+message)
 }
 
