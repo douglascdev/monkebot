@@ -12,16 +12,26 @@ type DBConfig struct {
 	Version        int    `json:"Version"` // used to keep track of migrations. 0 means the tables were not created yet.
 }
 
+type ExplorationResult struct {
+	ResultType string `json:"ResultType"`
+	Message    string `json:"Message"`
+}
+
+type RPGConfig struct {
+	ExplorationResults []ExplorationResult `json:"ExplorationResults"`
+}
+
 // changes to this struct must be reflected in tests and config.json
 type Config struct {
-	TwitchToken     string   `json:"TwitchToken"`
-	InitialChannels []string `json:"InitialChannels"`
-	Prefix          string   `json:"Prefix"`
-	UserID          string   `json:"UserID"`
-	AdminUsernames  []string `json:"AdminUsernames"`
-	Login           string   `json:"Login"`
-	ClientID        string   `json:"ClientID"`
-	DBConfig        DBConfig `json:"DBConfig"`
+	TwitchToken     string    `json:"TwitchToken"`
+	InitialChannels []string  `json:"InitialChannels"`
+	Prefix          string    `json:"Prefix"`
+	UserID          string    `json:"UserID"`
+	AdminUsernames  []string  `json:"AdminUsernames"`
+	Login           string    `json:"Login"`
+	ClientID        string    `json:"ClientID"`
+	DBConfig        DBConfig  `json:"DBConfig"`
+	RPGConfig       RPGConfig `json:"RPGConfig"`
 }
 
 // unmarshal config and ensure every field is set or return an error
@@ -65,6 +75,12 @@ func ConfigTemplateJSON() ([]byte, error) {
 			DataSourceName: "file:data.db",
 			Version:        0,
 		},
+		RPGConfig: RPGConfig{ExplorationResults: []ExplorationResult{
+			{ResultType: "VeryPositive", Message: "You have gained gold!"},
+			{ResultType: "Positive", Message: "You have gained a few coins"},
+			{ResultType: "Negative", Message: "You have lost a few coins"},
+			{ResultType: "VeryNegative", Message: "You have lost gold!"},
+		}},
 	}
 
 	jsonBytes, err := json.MarshalIndent(cfg, "", "  ")

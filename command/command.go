@@ -87,6 +87,7 @@ var Commands = []Command{
 	buttsbot,
 	butt,
 	help,
+	explore,
 }
 
 var (
@@ -173,6 +174,8 @@ func HandleCommands(message *Message, sender MessageSender, config *config.Confi
 				break
 			}
 		}
+
+		return nil
 	}
 
 	if cmd, ok := commandMap[args[0]]; ok {

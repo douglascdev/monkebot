@@ -53,6 +53,28 @@ var Migrations = DBMigrations{
 				), true FROM user
 			`,
 		}},
+		{Version: 4, Stmts: []string{
+			"INSERT INTO command (name) VALUES ('explore')",
+			`INSERT INTO user_command (user_id, command_id, is_enabled)
+				SELECT id, (
+					SELECT c.id FROM command c WHERE c.name = 'explore'
+				), true FROM user`,
+			`CREATE TABLE rpg_item (
+				id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+				name TEXT NOT NULL,
+				description TEXT NOT NULL
+			)`,
+			`CREATE TABLE rpg_user_item (
+				id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+				user_id TEXT NOT NULL,
+				rpg_item_id INTEGER NOT NULL,
+				amount INTEGER NOT NULL,
+
+				FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
+				FOREIGN KEY (rpg_item_id) REFERENCES rpg_item(id) ON DELETE CASCADE
+			)`,
+			`INSERT INTO rpg_item (name, description) VALUES ('buttinho', 'The most widely used currency in the seven seas.')`,
+		}},
 	},
 }
 
@@ -156,11 +178,27 @@ func CurrentSchema() []string {
 			FOREIGN KEY (command_id) REFERENCES command(id) ON DELETE CASCADE
 		)`,
 		`CREATE INDEX idx_is_enabled ON user_command(is_enabled)`,
+		`CREATE TABLE rpg_item (
+			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL,
+			description TEXT NOT NULL
+		)`,
+		`CREATE TABLE rpg_user_item (
+			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+			user_id TEXT NOT NULL,
+			rpg_item_id INTEGER NOT NULL,
+			amount INTEGER NOT NULL,
+
+			FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
+			FOREIGN KEY (rpg_item_id) REFERENCES rpg_item(id) ON DELETE CASCADE
+		)`,
 
 		// DML
 		`INSERT INTO permission (name) VALUES ('user')`,
 		`INSERT INTO permission (name, is_ignored) VALUES ('banned', true)`,
 		`INSERT INTO permission (name, is_bot_admin) VALUES ('admin', true)`,
+
+		`INSERT INTO rpg_item (name, description) VALUES ('buttinho', 'The most widely used currency in the seven seas.')`,
 	}
 }
 
