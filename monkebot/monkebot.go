@@ -169,7 +169,11 @@ func (t *Monkebot) Part(channels ...string) {
 }
 
 func (t *Monkebot) Say(channel string, message string) {
-	if potatFilters.Test(message, potatFilters.FilterAll) {
+	if message == "" {
+		log.Warn().Msg("ignored attempt to send empty message")
+		return
+	}
+	if potatFilters.Test(message, potatFilters.FilterStrict) {
 		log.Warn().
 			Str("channel", channel).
 			Str("message", message).
