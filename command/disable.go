@@ -5,17 +5,18 @@ import (
 	"monkebot/database"
 )
 
-var setenabled = Command{
-	Name:              "setenabled",
-	Usage:             "setenabled <command> <on | off>",
-	Description:       "Enables or disables a command for all users in the channel",
+var disable = Command{
+	Name:              "disable",
+	Aliases:           []string{},
+	Usage:             "disable [command]",
+	Description:       "disables a command for all users in the channel",
 	Cooldown:          5,
 	NoPrefix:          false,
 	NoPrefixShouldRun: nil,
 	CanDisable:        false,
 	Execute: func(message *Message, sender MessageSender, args []string) error {
-		if len(args) != 3 || (args[2] != "on" && args[2] != "off") {
-			sender.Say(message.Chatter.Name, "Usage: setenabled <command> <on | off>")
+		if len(args) != 2 {
+			sender.Say(message.Chatter.Name, "Usage: disable [command]")
 			return nil
 		}
 
@@ -56,7 +57,7 @@ var setenabled = Command{
 		}
 		defer tx.Rollback()
 
-		err = database.UpdateIsUserCommandEnabled(tx, args[2] == "on", message.RoomID, command.Name)
+		err = database.UpdateIsUserCommandEnabled(tx, false, message.RoomID, command.Name)
 		if err != nil {
 			sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
 			return err
@@ -68,7 +69,7 @@ var setenabled = Command{
 			return err
 		}
 
-		sender.Say(message.Channel, fmt.Sprintf("✅Set command '%s' to '%s'", command.Name, args[2]))
+		sender.Say(message.Channel, fmt.Sprintf("✅Disabled command '%s'", command.Name))
 		return nil
 	},
 }

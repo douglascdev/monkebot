@@ -75,6 +75,17 @@ var Migrations = DBMigrations{
 			)`,
 			`INSERT INTO rpg_item (name, description) VALUES ('buttinho', 'The most widely used currency in the seven seas.')`,
 		}},
+		{Version: 5, Stmts: []string{
+			"INSERT INTO command (name) VALUES ('enable'), ('disable')",
+			`INSERT INTO user_command (user_id, command_id, is_enabled)
+				SELECT id, (
+					SELECT c.id FROM command c WHERE c.name = 'enable'
+				), true FROM user`,
+			`INSERT INTO user_command (user_id, command_id, is_enabled)
+				SELECT id, (
+					SELECT c.id FROM command c WHERE c.name = 'disable'
+				), true FROM user`,
+		}},
 	},
 }
 

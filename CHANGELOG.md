@@ -4,3 +4,4 @@
 - Create command list
 - Add help command
 - Add explore command
+- Split setenabled into enable and disable

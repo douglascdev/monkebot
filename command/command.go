@@ -83,11 +83,12 @@ var Commands = []Command{
 	join,
 	part,
 	setLevel,
-	setenabled,
 	buttsbot,
 	butt,
 	help,
 	explore,
+	enable,
+	disable,
 }
 
 var (
