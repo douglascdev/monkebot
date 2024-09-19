@@ -26,4 +26,4 @@ go.work.sum
 
 # bot configs and sqlite databases
 *.json
-*.db
+*.db*
