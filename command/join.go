@@ -144,7 +144,7 @@ var join = Command{
 		for _, channel := range channelsToJoin {
 			err = database.InsertUserCommands(tx, channel.ID, commandNames...)
 			if err != nil {
-				return err
+				log.Warn().Err(err).Str("channel", channel.Name).Msg("failed to insert user commands after join, skipping channel")
 			}
 		}
 
@@ -153,11 +153,11 @@ var join = Command{
 			return err
 		}
 
-		log.Info().Msg("successfully joined channels")
 		channelNames := make([]string, len(channelsToJoin))
 		for i, channel := range channelsToJoin {
 			channelNames[i] = channel.Name
 		}
+		log.Info().Strs("channels", channelNames).Msg("successfully joined channels")
 		sender.Join(channelNames...)
 		sender.Say(message.Channel, fmt.Sprintf("✅ Joined channel(s) %s", strings.Join(channelNames, ", ")))
 		for _, channel := range channelsToJoin {

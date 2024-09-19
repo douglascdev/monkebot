@@ -250,12 +250,27 @@ func InsertUserCommands(tx *sql.Tx, userID string, commandNames ...string) error
 		return fmt.Errorf("failed to get command ids: %w", err)
 	}
 
+	// prepared statement to check if user command already exists
+	var userCommandExistsStmt *sql.Stmt
+	userCommandExistsStmt, err = tx.Prepare("SELECT id FROM user_command WHERE user_id = ? AND command_id = ?")
+	commandExists := func(userID string, commandID int) bool {
+		var id int
+		err = userCommandExistsStmt.QueryRow(userID, commandID).Scan(&id)
+		if err != nil && err != sql.ErrNoRows {
+			return false
+		}
+		return err == nil
+	}
+
 	var userCommandInsertStmt *sql.Stmt
 	userCommandInsertStmt, err = tx.Prepare("INSERT INTO user_command (user_id, command_id) VALUES (?, ?)")
 	if err != nil {
 		return fmt.Errorf("failed to prepare user command insert: %w", err)
 	}
 	for _, commandID := range commandIDs {
+		if commandExists(userID, commandID) {
+			return fmt.Errorf("user %s already has command %d", userID, commandID)
+		}
 		_, err = userCommandInsertStmt.Exec(userID, commandID)
 		if err != nil {
 			return fmt.Errorf("failed to insert user command: %w", err)
@@ -296,7 +311,7 @@ func InsertUsers(tx *sql.Tx, joinBot bool, users ...struct{ ID, Name string }) e
 	for _, user := range users {
 		result, err = userInsertStmt.Exec(user.ID, userPermissionID, user.Name, joinBot)
 		if err != nil {
-			log.Err(err).Str("name", user.Name).Msg("skipping insertion for user")
+			log.Warn().Err(err).Str("name", user.Name).Msg("skipping insertion for user")
 			continue
 		}
 		userID, err = result.LastInsertId()
