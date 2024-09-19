@@ -68,6 +68,24 @@ func InitDB(driver string, dataSourceName string, cfgReader io.Reader, cfgWriter
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
+	if driver == "sqlite3" {
+		pragmas := []string{
+			"PRAGMA main.page_size=8192;",
+			"PRAGMA main.cache_size=15000;",
+			"PRAGMA main.locking_mode=EXCLUSIVE;",
+			"PRAGMA main.synchronous=NORMAL;",
+			"PRAGMA main.journal_mode=WAL;",
+			"PRAGMA main.temp_store=MEMORY;",
+		}
+
+		for _, p := range pragmas {
+			_, err = db.Exec(p)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set pragma: %w", err)
+			}
+		}
+	}
+
 	var cfg *config.Config
 	var data []byte
 	data, err = io.ReadAll(cfgReader)
