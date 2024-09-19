@@ -13,8 +13,8 @@ import (
 var join = Command{
 	Name:              "join",
 	Aliases:           []string{},
-	Usage:             "join | join <channel>",
-	Description:       "Join the message author's channel",
+	Usage:             "join | join [channel]",
+	Description:       "Join the message author's channel or the specified channel",
 	Cooldown:          5,
 	NoPrefix:          false,
 	NoPrefixShouldRun: nil,

@@ -10,8 +10,8 @@ import (
 var setLevel = Command{
 	Name:              "setlevel",
 	Aliases:           []string{"permission", "perm", "level"},
-	Usage:             "setlevel <username> <permission>",
-	Description:       "Responds with pong and latency to twitch in milliseconds",
+	Usage:             "setlevel [username] [permission]",
+	Description:       "Set a user's permission level",
 	Cooldown:          5,
 	NoPrefix:          false,
 	NoPrefixShouldRun: nil,

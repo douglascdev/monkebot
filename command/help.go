@@ -7,8 +7,8 @@ import (
 var help = Command{
 	Name:              "help",
 	Aliases:           []string{},
-	Usage:             "help | help <command>",
-	Description:       "Responds with pong and latency to twitch in milliseconds",
+	Usage:             "help | help [command]",
+	Description:       "Get the full list of commands, or help with a specific command",
 	Cooldown:          5,
 	NoPrefix:          false,
 	NoPrefixShouldRun: nil,

@@ -9,8 +9,8 @@ var buttRegexp = regexp.MustCompile(`^butt`)
 var butt = Command{
 	Name:        "butt",
 	Aliases:     []string{},
-	Usage:       "",
-	Description: "Responds to butt with butt",
+	Usage:       "butt[anything]",
+	Description: "Responds with butt to messages starting with butt",
 	Cooldown:    5,
 	NoPrefix:    true,
 	NoPrefixShouldRun: func(message *Message, sender MessageSender, args []string) bool {

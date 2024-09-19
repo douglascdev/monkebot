@@ -36,6 +36,17 @@ type Command struct {
 	Execute           func(message *Message, sender MessageSender, args []string) error `json:"-"`
 }
 
+type SortByPrefixAndName []Command
+
+func (a SortByPrefixAndName) Len() int      { return len(a) }
+func (a SortByPrefixAndName) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a SortByPrefixAndName) Less(i, j int) bool {
+	if a[i].Name == a[j].Name {
+		return a[i].NoPrefix && !a[j].NoPrefix
+	}
+	return a[i].Name < a[j].Name
+}
+
 type Chatter struct {
 	Name string
 	ID   string

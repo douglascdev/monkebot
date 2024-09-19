@@ -91,9 +91,9 @@ var explore = Command{
 		}
 
 		if reward >= 0 {
-			sender.Say(message.Channel, fmt.Sprintf("%s [+%d => %d %s]", outcome.Message, reward, amount, itemName))
+			sender.Say(message.Channel, fmt.Sprintf("%s [ +%d => %d %s ]", outcome.Message, reward, amount, itemName))
 		} else {
-			sender.Say(message.Channel, fmt.Sprintf("%s [%d => %d %s]", outcome.Message, reward, amount, itemName))
+			sender.Say(message.Channel, fmt.Sprintf("%s [ %d => %d %s ]", outcome.Message, reward, amount, itemName))
 		}
 
 		return nil

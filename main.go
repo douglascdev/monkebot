@@ -9,6 +9,7 @@ import (
 	"monkebot/database"
 	"monkebot/monkebot"
 	"os"
+	"sort"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -19,6 +20,7 @@ func main() {
 	// parse command-line arguments
 	cfgPath := flag.String("cfg", "config.json", "path to config file")
 	debug := flag.Bool("debug", false, "sets log level to debug")
+	cmdListPrefix := flag.String("cmd-list-prefix", "\\", "sets the bot's prefix used in the command list generation")
 	generateCmdList := flag.String("cmd-list", "", "ignores all other args and generates command list json to the specified path")
 	flag.Parse()
 
@@ -42,6 +44,15 @@ func main() {
 			commandListData []byte
 			err             error
 		)
+		// show commands on the list with the prefix
+		for i := range command.Commands {
+			if !command.Commands[i].NoPrefix {
+				command.Commands[i].Name = *cmdListPrefix + command.Commands[i].Name
+			}
+		}
+
+		sort.Sort(command.SortByPrefixAndName(command.Commands))
+
 		commandListData, err = json.MarshalIndent(command.Commands, "", "  ")
 		if err != nil {
 			log.Fatal().Err(err).Msg("failed to generate command list json")

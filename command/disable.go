@@ -9,7 +9,7 @@ var disable = Command{
 	Name:              "disable",
 	Aliases:           []string{},
 	Usage:             "disable [command]",
-	Description:       "disables a command for all users in the channel",
+	Description:       "Disables a command for all users in the channel",
 	Cooldown:          5,
 	NoPrefix:          false,
 	NoPrefixShouldRun: nil,
