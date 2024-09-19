@@ -374,15 +374,24 @@ func TestUpdateUserPermission(t *testing.T) {
 		t.Fatalf("failed to insert users: %v", err)
 	}
 
-	var userID string
-	err = tx.QueryRow("SELECT id FROM user WHERE name = 'test'").Scan(&userID)
+	var username string
+	err = tx.QueryRow("SELECT id FROM user WHERE name = 'test'").Scan(&username)
 	if err != nil {
 		t.Fatalf("failed to get user id: %v", err)
 	}
 
-	err = UpdateUserPermission(tx, userID, "admin")
+	err = UpdateUserPermission(tx, username, "admin")
 	if err != nil {
 		t.Fatalf("failed to update user: %v", err)
+	}
+
+	var permissionName string
+	err = tx.QueryRow("SELECT p.name FROM permission p INNER JOIN user u ON u.permission_id = p.id WHERE u.name = 'test'").Scan(&permissionName)
+	if err != nil {
+		t.Fatalf("failed to get permission name: %v", err)
+	}
+	if permissionName != "admin" {
+		t.Fatalf("permission name was not updated: %s", permissionName)
 	}
 }
 
@@ -444,12 +453,12 @@ func TestSelectIsUserIgnored(t *testing.T) {
 		t.Fatalf("failed to get user id: %v", err)
 	}
 
-	err = UpdateUserPermission(tx, test1ID, "banned")
+	err = UpdateUserPermission(tx, users[0].Name, "banned")
 	if err != nil {
 		t.Fatalf("failed to update user: %v", err)
 	}
 
-	err = UpdateUserPermission(tx, test2ID, "admin")
+	err = UpdateUserPermission(tx, users[1].Name, "admin")
 	if err != nil {
 		t.Fatalf("failed to update user: %v", err)
 	}

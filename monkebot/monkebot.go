@@ -120,7 +120,7 @@ func NewMonkebot(cfg config.Config, db *sql.DB) (*Monkebot, error) {
 			if slices.Contains(cfg.AdminUsernames, user.Name) {
 				continue
 			}
-			err = database.UpdateUserPermission(tx, user.ID, "admin")
+			err = database.UpdateUserPermission(tx, user.Name, "admin")
 			if err != nil {
 				log.Err(err).Str("name", user.Name).Str("id", user.ID).Msg("failed to insert user commands for user")
 				return

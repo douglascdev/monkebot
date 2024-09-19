@@ -308,7 +308,7 @@ func InsertUsers(tx *sql.Tx, joinBot bool, users ...struct{ ID, Name string }) e
 	return nil
 }
 
-func UpdateUserPermission(tx *sql.Tx, userID string, permissionName string) error {
+func UpdateUserPermission(tx *sql.Tx, username string, permissionName string) error {
 	var (
 		err       error
 		newPermID int64
@@ -320,9 +320,9 @@ func UpdateUserPermission(tx *sql.Tx, userID string, permissionName string) erro
 		return fmt.Errorf("failed to find id for permission %s: %w", permissionName, err)
 	}
 
-	_, err = tx.Exec("UPDATE user SET permission_id = ? WHERE id = ?", newPermID, userID)
+	_, err = tx.Exec("UPDATE user SET permission_id = ? WHERE name = ?", newPermID, username)
 	if err != nil {
-		return fmt.Errorf("failed to update user %s: %w", userID, err)
+		return fmt.Errorf("failed to update user %s: %w", username, err)
 	}
 
 	return nil
