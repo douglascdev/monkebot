@@ -38,7 +38,7 @@ jobs:
         with:
           go-version: '1.23'
       - name: Generate json with the list of bot commands
-        run: go run main.go -cmd-list ./site/commands.json
+        run: go run main.go -cmd-list ./.site/commands.json
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
