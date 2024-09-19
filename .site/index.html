@@ -5,11 +5,40 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>HTML5 Boilerplate</title>
-  <link rel="stylesheet" href="styles.css">
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
+  <!-- <link rel="stylesheet" href="styles.css"> -->
 </head>
 
 <body>
-  <h1>Page Title</h1>
+  <h1>Commands</h1>
+  <table id="commands-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Aliases</th>
+        <th>Usage</th>
+        <th>Description</th>
+        <th>Cooldown</th>
+        <th>NoPrefix</th>
+        <th>CanDisable</th>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
   <script src="scripts.js"></script>
 </body>
 
