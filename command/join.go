@@ -37,13 +37,15 @@ var join = Command{
 				Name string
 			}{ID: message.Chatter.ID, Name: message.Chatter.Name})
 		} else if len(args) > 1 {
-			var isAdmin bool
+			isAdmin := false
 			isAdmin, err = database.SelectIsUserAdmin(tx, message.Chatter.ID)
-			if err != nil {
+
+			if err != nil && err != sql.ErrNoRows {
 				sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
 				return err
 			}
-			if !isAdmin {
+
+			if err == sql.ErrNoRows || !isAdmin {
 				sender.Say(message.Channel, "❌You must be an admin to use this command")
 				return nil
 			}
