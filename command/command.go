@@ -85,7 +85,9 @@ func getCommandData(message *types.Message, cmd types.Command) (*commandData, er
 	}
 
 	result.isUserIgnored, err = database.SelectIsUserIgnored(tx, message.Chatter.ID)
-	if err != nil {
+	if err == sql.ErrNoRows {
+		result.isUserIgnored = false
+	} else if err != nil {
 		return nil, err
 	}
 
