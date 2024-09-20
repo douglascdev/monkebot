@@ -30,7 +30,7 @@ var explore = types.Command{
 		user := struct{ ID, Name string }{ID: message.Chatter.ID, Name: message.Chatter.Name}
 		err = database.InsertUsers(tx, false, user)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to insert user: %w", err)
 		}
 
 		// randomly select an outcome and reward
@@ -58,24 +58,24 @@ var explore = types.Command{
 		)
 		err = tx.QueryRow("SELECT id, name FROM rpg_item WHERE name = 'buttinho'").Scan(&itemID, &itemName)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get buttinho item: %w", err)
 		}
 
 		// check if rpg_user_item exists
 		var exists bool
 		err = tx.QueryRow("SELECT 1 FROM rpg_user_item WHERE user_id = ? AND rpg_item_id = ?", user.ID, itemID).Scan(&exists)
 		if err != nil && err != sql.ErrNoRows {
-			return err
+			return fmt.Errorf("failed to check if rpg_user_item exists: %w", err)
 		}
 		if exists {
 			_, err = tx.Exec("UPDATE rpg_user_item SET amount = amount + ? WHERE user_id = ? AND rpg_item_id = ?", reward, user.ID, itemID)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to update rpg_user_item: %w", err)
 			}
 		} else {
 			_, err = tx.Exec("INSERT INTO rpg_user_item (user_id, rpg_item_id, amount) VALUES (?, ?, ?)", user.ID, itemID, reward)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to insert rpg_user_item: %w", err)
 			}
 		}
 
@@ -83,12 +83,12 @@ var explore = types.Command{
 		var amount int
 		err = tx.QueryRow("SELECT amount FROM rpg_user_item WHERE user_id = ? AND rpg_item_id = ?", user.ID, itemID).Scan(&amount)
 		if err != nil && err != sql.ErrNoRows {
-			return err
+			return fmt.Errorf("failed to select rpg_user_item: %w", err)
 		}
 
 		err = tx.Commit()
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to commit transaction: %w", err)
 		}
 
 		var msg string
