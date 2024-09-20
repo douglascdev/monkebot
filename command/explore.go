@@ -17,7 +17,7 @@ var explore = Command{
 	Cooldown:          5,
 	NoPrefix:          false,
 	NoPrefixShouldRun: nil,
-	CanDisable:        false,
+	CanDisable:        true,
 	Execute: func(message *Message, sender MessageSender, args []string) error {
 		tx, err := message.DB.Begin()
 		if err != nil {
