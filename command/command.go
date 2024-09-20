@@ -133,24 +133,31 @@ func createCommandMap(commands []Command) map[string]Command {
 	return cmdMap
 }
 
-func isCommandEnabled(message *Message, cmd Command) (bool, error) {
-	if !cmd.CanDisable {
-		return true, nil
-	}
-
+// return if the command is enabled and if the user is ignored
+func getCommandData(message *Message, cmd Command) (bool, bool, error) {
 	tx, err := message.DB.Begin()
 	if err != nil {
-		return false, fmt.Errorf("failed to begin transaction: %w", err)
+		return false, false, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer tx.Rollback()
 
-	var enabled bool
-	enabled, err = database.SelectIsUserCommandEnabled(tx, message.RoomID, cmd.Name)
-	if err != nil {
-		return false, err
+	var isEnabled bool
+	if !cmd.CanDisable {
+		isEnabled = true
+	} else {
+		isEnabled, err = database.SelectIsUserCommandEnabled(tx, message.RoomID, cmd.Name)
+		if err != nil {
+			return false, false, err
+		}
 	}
 
-	return enabled, nil
+	var isIgnored bool
+	isIgnored, err = database.SelectIsUserIgnored(tx, message.Chatter.ID)
+	if err != nil {
+		return false, false, err
+	}
+
+	return isEnabled, isIgnored, tx.Commit()
 }
 
 func HandleCommands(message *Message, sender MessageSender, config *config.Config) error {
@@ -168,13 +175,21 @@ func HandleCommands(message *Message, sender MessageSender, config *config.Confi
 		// check if command is no prefix
 		for _, noPrefixCmd := range commandsNoPrefix {
 			if noPrefixCmd.NoPrefixShouldRun != nil && noPrefixCmd.NoPrefixShouldRun(message, sender, args) {
-				var isEnabled bool
-				isEnabled, err = isCommandEnabled(message, noPrefixCmd)
+				var (
+					isEnabled     bool
+					isUserIgnored bool
+				)
+				isEnabled, isUserIgnored, err = getCommandData(message, noPrefixCmd)
 				if err != nil {
 					return err
 				}
 				if !isEnabled {
 					log.Debug().Str("command", noPrefixCmd.Name).Str("channel", message.Channel).Msg("ignored disabled no-prefix command")
+					return nil
+				}
+
+				if isUserIgnored {
+					log.Debug().Str("user", message.Chatter.Name).Str("channel", message.Channel).Msg("ignored user")
 					return nil
 				}
 
@@ -191,25 +206,22 @@ func HandleCommands(message *Message, sender MessageSender, config *config.Confi
 	}
 
 	if cmd, ok := commandMap[args[0]]; ok {
-		if cmd.CanDisable {
+		var (
+			isEnabled     bool
+			isUserIgnored bool
+		)
+		isEnabled, isUserIgnored, err = getCommandData(message, cmd)
+		if err != nil {
+			return err
+		}
+		if !isEnabled {
+			log.Debug().Str("command", cmd.Name).Str("channel", message.Channel).Msg("ignored disabled command")
+			return nil
+		}
 
-			var tx *sql.Tx
-			tx, err = message.DB.Begin()
-			if err != nil {
-				return fmt.Errorf("failed to begin transaction: %w", err)
-			}
-			defer tx.Rollback()
-
-			var enabled bool
-			enabled, err = database.SelectIsUserCommandEnabled(tx, message.RoomID, cmd.Name)
-			if err != nil {
-				return err
-			}
-
-			if !enabled {
-				log.Debug().Str("command", cmd.Name).Str("channel", message.Channel).Msg("ignored disabled command")
-				return nil
-			}
+		if isUserIgnored {
+			log.Debug().Str("user", message.Chatter.Name).Str("channel", message.Channel).Msg("ignored user")
+			return nil
 		}
 
 		if err := cmd.Execute(message, sender, args); err != nil {
