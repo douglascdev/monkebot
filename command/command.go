@@ -71,7 +71,7 @@ func getCommandData(message *types.Message, cmd types.Command) (*commandData, er
 
 	tx, err := message.DB.Begin()
 	if err != nil {
-		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+		return nil, fmt.Errorf("failed to begin commandData transaction: %w", err)
 	}
 	defer tx.Rollback()
 
@@ -80,7 +80,7 @@ func getCommandData(message *types.Message, cmd types.Command) (*commandData, er
 	} else {
 		result.isCmdEnabled, err = database.SelectIsUserCommandEnabled(tx, message.RoomID, cmd.Name)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to select is_user_command_enabled: %w", err)
 		}
 	}
 
@@ -88,12 +88,12 @@ func getCommandData(message *types.Message, cmd types.Command) (*commandData, er
 	if err == sql.ErrNoRows {
 		result.isUserIgnored = false
 	} else if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to select user's is_ignored: %w", err)
 	}
 
 	result.isCmdOnCoolDown, err = database.SelectIsCommandOnCooldown(tx, message.RoomID, cmd.Name, cmd.Cooldown)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to select command cooldown: %w", err)
 	}
 
 	return result, tx.Commit()
