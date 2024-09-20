@@ -40,8 +40,8 @@ var explore = types.Command{
 			ok                bool
 		)
 		outcomeMultiplierMap := map[string]int{
-			"VeryPositive": 2,
-			"Positive":     1,
+			"VeryPositive": 3,
+			"Positive":     2,
 			"Negative":     -1,
 			"VeryNegative": -2,
 		}
