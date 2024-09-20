@@ -48,7 +48,7 @@ var explore = Command{
 			log.Warn().Msgf("unknown outcome type: %s", outcome.ResultType)
 			outcomeMultiplier = 1
 		}
-		reward := outcomeMultiplier*rand.IntN(10) + 1
+		reward := outcomeMultiplier * max(1, rand.IntN(10))
 
 		// get buttinho(coin) item id and name
 		var (
