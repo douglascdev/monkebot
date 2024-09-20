@@ -118,6 +118,9 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to initialize database")
 	}
 
+	defer db.Close()
+	writer.Close()
+
 	var mb *monkebot.Monkebot
 	mb, err = monkebot.NewMonkebot(*cfg, db)
 	if err != nil {
