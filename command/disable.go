@@ -3,9 +3,10 @@ package command
 import (
 	"fmt"
 	"monkebot/database"
+	"monkebot/types"
 )
 
-var disable = Command{
+var disable = types.Command{
 	Name:              "disable",
 	Aliases:           []string{},
 	Usage:             "disable [command]",
@@ -14,14 +15,14 @@ var disable = Command{
 	NoPrefix:          false,
 	NoPrefixShouldRun: nil,
 	CanDisable:        false,
-	Execute: func(message *Message, sender MessageSender, args []string) error {
+	Execute: func(message *types.Message, sender types.MessageSender, args []string) error {
 		if len(args) != 2 {
 			sender.Say(message.Chatter.Name, "Usage: disable [command]")
 			return nil
 		}
 
 		var (
-			command Command
+			command types.Command
 			ok      bool
 			err     error
 		)

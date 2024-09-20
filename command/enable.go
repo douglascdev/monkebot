@@ -3,9 +3,10 @@ package command
 import (
 	"fmt"
 	"monkebot/database"
+	"monkebot/types"
 )
 
-var enable = Command{
+var enable = types.Command{
 	Name:              "enable",
 	Aliases:           []string{},
 	Usage:             "enable [command]",
@@ -14,14 +15,14 @@ var enable = Command{
 	NoPrefix:          false,
 	NoPrefixShouldRun: nil,
 	CanDisable:        false,
-	Execute: func(message *Message, sender MessageSender, args []string) error {
+	Execute: func(message *types.Message, sender types.MessageSender, args []string) error {
 		if len(args) != 2 {
 			sender.Say(message.Chatter.Name, "Usage: enable [command]")
 			return nil
 		}
 
 		var (
-			command Command
+			command types.Command
 			ok      bool
 			err     error
 		)

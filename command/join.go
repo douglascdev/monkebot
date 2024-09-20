@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"monkebot/database"
 	"monkebot/twitchapi"
+	"monkebot/types"
 	"strings"
 
 	"github.com/rs/zerolog/log"
 )
 
-var join = Command{
+var join = types.Command{
 	Name:              "join",
 	Aliases:           []string{},
 	Usage:             "join | join [channel]",
@@ -19,7 +20,7 @@ var join = Command{
 	NoPrefix:          false,
 	NoPrefixShouldRun: nil,
 	CanDisable:        false,
-	Execute: func(message *Message, sender MessageSender, args []string) error {
+	Execute: func(message *types.Message, sender types.MessageSender, args []string) error {
 		tx, err := message.DB.Begin()
 		if err != nil {
 			sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")

@@ -2,10 +2,11 @@ package command
 
 import (
 	"fmt"
+	"monkebot/types"
 	"time"
 )
 
-var ping = Command{
+var ping = types.Command{
 	Name:              "ping",
 	Aliases:           []string{},
 	Usage:             "ping",
@@ -14,7 +15,7 @@ var ping = Command{
 	NoPrefix:          false,
 	NoPrefixShouldRun: nil,
 	CanDisable:        false,
-	Execute: func(message *Message, sender MessageSender, args []string) error {
+	Execute: func(message *types.Message, sender types.MessageSender, args []string) error {
 		latency := fmt.Sprintf("%d ms", time.Since(message.Time).Milliseconds())
 		sender.Say(message.Channel, fmt.Sprintf("🐒 Pong! Latency: %s", latency))
 		return nil

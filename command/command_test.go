@@ -1,6 +1,7 @@
 package command
 
 import (
+	"monkebot/types"
 	"strings"
 	"testing"
 )
@@ -10,7 +11,11 @@ type MockSender struct {
 	responses []string
 }
 
-func (m *MockSender) Say(channel string, message string) {
+func (m *MockSender) Say(channel string, message string, params ...struct {
+	Param types.SenderParam
+	Value string
+},
+) {
 	m.responses = append(m.responses, message)
 }
 
@@ -71,7 +76,7 @@ func TestCommandSenzp(t *testing.T) {
 	}
 
 	for input, expected := range expectedResponses {
-		err := senzpTest.Execute(&Message{Channel: "test"}, sender, strings.Split(input, " "))
+		err := senzpTest.Execute(&types.Message{Channel: "test"}, sender, strings.Split(input, " "))
 		if err != nil {
 			t.Errorf("unexpected error: %s", err)
 		}

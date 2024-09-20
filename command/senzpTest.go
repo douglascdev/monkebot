@@ -1,6 +1,7 @@
 package command
 
 import (
+	"monkebot/types"
 	"regexp"
 	"strings"
 	"unicode"
@@ -8,11 +9,11 @@ import (
 
 var expr = regexp.MustCompile(`^senzpTest`)
 
-func shouldRun(message *Message, sender MessageSender, args []string) bool {
+func shouldRun(message *types.Message, sender types.MessageSender, args []string) bool {
 	return expr.MatchString(message.Message)
 }
 
-var senzpTest = Command{
+var senzpTest = types.Command{
 	Name:              "senzpTest",
 	Aliases:           []string{},
 	Usage:             "senzpTest <text>",
@@ -21,7 +22,7 @@ var senzpTest = Command{
 	NoPrefix:          true,
 	NoPrefixShouldRun: shouldRun,
 	CanDisable:        true,
-	Execute: func(message *Message, sender MessageSender, args []string) error {
+	Execute: func(message *types.Message, sender types.MessageSender, args []string) error {
 		cleanString := func(s string) string {
 			cleaned := []rune{}
 			for _, r := range s {

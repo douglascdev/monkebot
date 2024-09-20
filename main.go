@@ -8,6 +8,7 @@ import (
 	"monkebot/config"
 	"monkebot/database"
 	"monkebot/monkebot"
+	"monkebot/types"
 	"os"
 	"sort"
 	"time"
@@ -51,7 +52,7 @@ func main() {
 			}
 		}
 
-		sort.Sort(command.SortByPrefixAndName(command.Commands))
+		sort.Sort(types.SortByPrefixAndName(command.Commands))
 
 		commandListData, err = json.MarshalIndent(command.Commands, "", "  ")
 		if err != nil {

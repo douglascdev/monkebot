@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"math/rand/v2"
 	"monkebot/database"
+	"monkebot/types"
 
 	"github.com/rs/zerolog/log"
 )
 
-var explore = Command{
+var explore = types.Command{
 	Name:              "explore",
 	Aliases:           []string{"e"},
 	Usage:             "explore",
@@ -18,7 +19,7 @@ var explore = Command{
 	NoPrefix:          false,
 	NoPrefixShouldRun: nil,
 	CanDisable:        true,
-	Execute: func(message *Message, sender MessageSender, args []string) error {
+	Execute: func(message *types.Message, sender types.MessageSender, args []string) error {
 		tx, err := message.DB.Begin()
 		if err != nil {
 			return err
@@ -90,11 +91,20 @@ var explore = Command{
 			return err
 		}
 
+		var msg string
 		if reward >= 0 {
-			sender.Say(message.Channel, fmt.Sprintf("%s [ +%d => %d %s ]", outcome.Message, reward, amount, itemName))
+			msg = fmt.Sprintf("%s [ +%d => %d %s ]", outcome.Message, reward, amount, itemName)
 		} else {
-			sender.Say(message.Channel, fmt.Sprintf("%s [ %d => %d %s ]", outcome.Message, reward, amount, itemName))
+			msg = fmt.Sprintf("%s [ %d => %d %s ]", outcome.Message, reward, amount, itemName)
 		}
+
+		sender.Say(message.Channel, msg, []struct {
+			Param types.SenderParam
+			Value string
+		}{
+			{types.ReplyMessageID, message.ID},
+			{types.Me, "true"},
+		}...)
 
 		return nil
 	},

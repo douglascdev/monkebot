@@ -3,11 +3,12 @@ package command
 import (
 	"fmt"
 	"monkebot/database"
+	"monkebot/types"
 
 	"github.com/rs/zerolog/log"
 )
 
-var setLevel = Command{
+var setLevel = types.Command{
 	Name:              "setlevel",
 	Aliases:           []string{"permission", "perm", "level"},
 	Usage:             "setlevel [username] [permission]",
@@ -16,7 +17,7 @@ var setLevel = Command{
 	NoPrefix:          false,
 	NoPrefixShouldRun: nil,
 	CanDisable:        false,
-	Execute: func(message *Message, sender MessageSender, args []string) error {
+	Execute: func(message *types.Message, sender types.MessageSender, args []string) error {
 		tx, err := message.DB.Begin()
 		defer tx.Rollback()
 		if err != nil {

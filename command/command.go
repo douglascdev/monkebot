@@ -1,94 +1,16 @@
 package command
 
 import (
-	"database/sql"
 	"fmt"
 	"monkebot/config"
 	"monkebot/database"
+	"monkebot/types"
 	"strings"
-	"time"
 
-	"github.com/gempir/go-twitch-irc/v4"
 	"github.com/rs/zerolog/log"
 )
 
-type MessageSender interface {
-	Say(channel string, message string)
-
-	Join(channels ...string)
-	Part(channels ...string)
-
-	Buttify(message string) string
-	ShouldButtify() bool
-}
-
-type Command struct {
-	Name        string
-	Aliases     []string
-	Usage       string
-	Description string
-	Cooldown    int
-	NoPrefix    bool
-	CanDisable  bool
-
-	// `json:"-"` excludes these 2 fields from being serialized into the command list json
-	NoPrefixShouldRun func(message *Message, sender MessageSender, args []string) bool  `json:"-"`
-	Execute           func(message *Message, sender MessageSender, args []string) error `json:"-"`
-}
-
-type SortByPrefixAndName []Command
-
-func (a SortByPrefixAndName) Len() int      { return len(a) }
-func (a SortByPrefixAndName) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a SortByPrefixAndName) Less(i, j int) bool {
-	if a[i].Name == a[j].Name {
-		return a[i].NoPrefix && !a[j].NoPrefix
-	}
-	return a[i].Name < a[j].Name
-}
-
-type Chatter struct {
-	Name string
-	ID   string
-
-	IsMod         bool
-	IsVIP         bool
-	IsBroadcaster bool
-}
-
-// Message normalized to be platform agnostic
-type Message struct {
-	Message string
-	Time    time.Time
-	Channel string
-	Cfg     *config.Config
-	RoomID  string
-	Chatter Chatter
-	DB      *sql.DB
-}
-
-func NewMessage(msg twitch.PrivateMessage, db *sql.DB, cfg *config.Config) *Message {
-	IsBroadcaster := msg.RoomID == msg.User.ID
-	_, IsMod := msg.Tags["mod"]
-	_, IsVIP := msg.Tags["vip"]
-	return &Message{
-		Message: msg.Message,
-		Time:    msg.Time,
-		Channel: msg.Channel,
-		RoomID:  msg.RoomID,
-		Cfg:     cfg,
-		Chatter: Chatter{
-			Name:          msg.User.Name,
-			ID:            msg.User.ID,
-			IsMod:         IsMod,
-			IsVIP:         IsVIP,
-			IsBroadcaster: IsBroadcaster,
-		},
-		DB: db,
-	}
-}
-
-var Commands = []Command{
+var Commands = []types.Command{
 	ping,
 	senzpTest,
 	join,
@@ -103,8 +25,8 @@ var Commands = []Command{
 }
 
 var (
-	commandMap       map[string]Command
-	commandsNoPrefix []Command
+	commandMap       map[string]types.Command
+	commandsNoPrefix []types.Command
 )
 
 func init() {
@@ -117,10 +39,10 @@ func init() {
 	}
 }
 
-// Maps command names and aliases to Command structs
+// Maps command names and aliases to types.Command structs
 // If prefixedOnly is true, only commands with NoPrefix=false will be added
-func createCommandMap(commands []Command) map[string]Command {
-	cmdMap := make(map[string]Command)
+func createCommandMap(commands []types.Command) map[string]types.Command {
+	cmdMap := make(map[string]types.Command)
 	for _, cmd := range commands {
 		if cmd.NoPrefix {
 			continue
@@ -134,7 +56,7 @@ func createCommandMap(commands []Command) map[string]Command {
 }
 
 // return if the command is enabled and if the user is ignored
-func getCommandData(message *Message, cmd Command) (bool, bool, error) {
+func getCommandData(message *types.Message, cmd types.Command) (bool, bool, error) {
 	tx, err := message.DB.Begin()
 	if err != nil {
 		return false, false, fmt.Errorf("failed to begin transaction: %w", err)
@@ -160,7 +82,7 @@ func getCommandData(message *Message, cmd Command) (bool, bool, error) {
 	return isEnabled, isIgnored, tx.Commit()
 }
 
-func HandleCommands(message *Message, sender MessageSender, config *config.Config) error {
+func HandleCommands(message *types.Message, sender types.MessageSender, config *config.Config) error {
 	var (
 		args []string
 		err  error

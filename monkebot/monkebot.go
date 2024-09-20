@@ -7,7 +7,9 @@ import (
 	"monkebot/config"
 	"monkebot/database"
 	"monkebot/twitchapi"
+	"monkebot/types"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/douglascdev/buttifier"
@@ -43,7 +45,7 @@ func NewMonkebot(cfg config.Config, db *sql.DB) (*Monkebot, error) {
 
 	client.OnPrivateMessage(func(message twitch.PrivateMessage) {
 		startTime := time.Now()
-		normalizedMsg := command.NewMessage(message, db, &cfg)
+		normalizedMsg := types.NewMessage(message, db, &cfg)
 		if err := command.HandleCommands(normalizedMsg, mb, &cfg); err != nil {
 			log.Err(err).Msg("command failed")
 		}
@@ -168,11 +170,31 @@ func (t *Monkebot) Part(channels ...string) {
 	}
 }
 
-func (t *Monkebot) Say(channel string, message string) {
+func (t *Monkebot) Say(channel string, message string, params ...struct {
+	Param types.SenderParam
+	Value string
+},
+) {
 	if message == "" {
 		log.Warn().Msg("ignored attempt to send empty message")
 		return
 	}
+
+	// read params
+	var (
+		replyMessageID string
+		me             bool
+	)
+	for _, param := range params {
+		switch param.Param {
+		case types.Me:
+			me = param.Value == "true"
+		case types.ReplyMessageID:
+			replyMessageID = param.Value
+		}
+	}
+
+	// filter banned phrases
 	if potatFilters.Test(message, potatFilters.FilterStrict) {
 		log.Warn().
 			Str("channel", channel).
@@ -181,8 +203,29 @@ func (t *Monkebot) Say(channel string, message string) {
 		t.TwitchClient.Say(channel, "⚠ Message withheld for containing a banned phrase...")
 		return
 	}
+
+	// send response
+	var response strings.Builder
+	if me {
+		const meStr = "/me "
+		response.WriteString(meStr)
+	}
+
 	const invisPrefix = "󠀀 " // prevents command injection
-	t.TwitchClient.Say(channel, invisPrefix+message)
+	response.WriteString(invisPrefix)
+
+	response.WriteString(message)
+
+	s := response.String()
+
+	if replyMessageID != "" {
+		log.Debug().Str("channel", channel).Str("replyMessageID", replyMessageID).Str("message", s).Msg("replying")
+		t.TwitchClient.Reply(channel, replyMessageID, s)
+		return
+	}
+
+	log.Debug().Str("channel", channel).Str("message", s).Msg("sending message")
+	t.TwitchClient.Say(channel, s)
 }
 
 func (t *Monkebot) ShouldButtify() bool {
