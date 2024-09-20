@@ -1,6 +1,7 @@
 package command
 
 import (
+	"database/sql"
 	"fmt"
 	"monkebot/config"
 	"monkebot/database"
@@ -55,37 +56,52 @@ func createCommandMap(commands []types.Command) map[string]types.Command {
 	return cmdMap
 }
 
-// return if the command is enabled and if the user is ignored
-func getCommandData(message *types.Message, cmd types.Command) (bool, bool, error) {
+type commandData struct {
+	isCmdEnabled    bool
+	isCmdOnCoolDown bool
+	isUserIgnored   bool
+}
+
+func getCommandData(message *types.Message, cmd types.Command) (*commandData, error) {
+	result := &commandData{
+		isCmdEnabled:    false,
+		isCmdOnCoolDown: false,
+		isUserIgnored:   false,
+	}
+
 	tx, err := message.DB.Begin()
 	if err != nil {
-		return false, false, fmt.Errorf("failed to begin transaction: %w", err)
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer tx.Rollback()
 
-	var isEnabled bool
 	if !cmd.CanDisable {
-		isEnabled = true
+		result.isCmdEnabled = true
 	} else {
-		isEnabled, err = database.SelectIsUserCommandEnabled(tx, message.RoomID, cmd.Name)
+		result.isCmdEnabled, err = database.SelectIsUserCommandEnabled(tx, message.RoomID, cmd.Name)
 		if err != nil {
-			return false, false, err
+			return nil, err
 		}
 	}
 
-	var isIgnored bool
-	isIgnored, err = database.SelectIsUserIgnored(tx, message.Chatter.ID)
+	result.isUserIgnored, err = database.SelectIsUserIgnored(tx, message.Chatter.ID)
 	if err != nil {
-		return false, false, err
+		return nil, err
 	}
 
-	return isEnabled, isIgnored, tx.Commit()
+	result.isCmdOnCoolDown, err = database.SelectIsCommandOnCooldown(tx, message.RoomID, cmd.Name, cmd.Cooldown)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, tx.Commit()
 }
 
 func HandleCommands(message *types.Message, sender types.MessageSender, config *config.Config) error {
 	var (
-		args []string
-		err  error
+		cmdData *commandData
+		args    []string
+		err     error
 	)
 
 	hasPrefix := strings.HasPrefix(message.Message, config.Prefix)
@@ -97,27 +113,45 @@ func HandleCommands(message *types.Message, sender types.MessageSender, config *
 		// check if command is no prefix
 		for _, noPrefixCmd := range commandsNoPrefix {
 			if noPrefixCmd.NoPrefixShouldRun != nil && noPrefixCmd.NoPrefixShouldRun(message, sender, args) {
-				var (
-					isEnabled     bool
-					isUserIgnored bool
-				)
-				isEnabled, isUserIgnored, err = getCommandData(message, noPrefixCmd)
+				cmdData, err = getCommandData(message, noPrefixCmd)
 				if err != nil {
 					return err
 				}
-				if !isEnabled {
+				if !cmdData.isCmdEnabled {
 					log.Debug().Str("command", noPrefixCmd.Name).Str("channel", message.Channel).Msg("ignored disabled no-prefix command")
 					return nil
 				}
 
-				if isUserIgnored {
+				if cmdData.isUserIgnored {
 					log.Debug().Str("user", message.Chatter.Name).Str("channel", message.Channel).Msg("ignored user")
+					return nil
+				}
+
+				if cmdData.isCmdOnCoolDown {
+					log.Debug().Str("command", noPrefixCmd.Name).Str("channel", message.Channel).Msg("command ignored due to channel cooldown")
 					return nil
 				}
 
 				err = noPrefixCmd.Execute(message, sender, args)
 				if err != nil {
 					return err
+				}
+
+				var tx *sql.Tx
+				tx, err = message.DB.Begin()
+				if err != nil {
+					return fmt.Errorf("failed to start last_used update transaction: %w", err)
+				}
+				defer tx.Rollback()
+
+				err = database.UpdateUserCommandLastUsed(tx, message.RoomID, noPrefixCmd.Name)
+				if err != nil {
+					return fmt.Errorf("failed to update last_used for command %s: %w", noPrefixCmd.Name, err)
+				}
+
+				err = tx.Commit()
+				if err != nil {
+					return fmt.Errorf("failed to commit transaction to update last_used for command %s: %w", noPrefixCmd.Name, err)
 				}
 
 				break
@@ -128,26 +162,44 @@ func HandleCommands(message *types.Message, sender types.MessageSender, config *
 	}
 
 	if cmd, ok := commandMap[args[0]]; ok {
-		var (
-			isEnabled     bool
-			isUserIgnored bool
-		)
-		isEnabled, isUserIgnored, err = getCommandData(message, cmd)
+		cmdData, err = getCommandData(message, cmd)
 		if err != nil {
 			return err
 		}
-		if !isEnabled {
+		if !cmdData.isCmdEnabled {
 			log.Debug().Str("command", cmd.Name).Str("channel", message.Channel).Msg("ignored disabled command")
 			return nil
 		}
 
-		if isUserIgnored {
+		if cmdData.isUserIgnored {
 			log.Debug().Str("user", message.Chatter.Name).Str("channel", message.Channel).Msg("ignored user")
 			return nil
 		}
 
-		if err := cmd.Execute(message, sender, args); err != nil {
+		if cmdData.isCmdOnCoolDown {
+			log.Debug().Str("command", cmd.Name).Str("channel", message.Channel).Msg("command ignored due to channel cooldown")
+			return nil
+		}
+
+		if err = cmd.Execute(message, sender, args); err != nil {
 			return err
+		}
+
+		var tx *sql.Tx
+		tx, err = message.DB.Begin()
+		if err != nil {
+			return fmt.Errorf("failed to start last_used update transaction: %w", err)
+		}
+		defer tx.Rollback()
+
+		err = database.UpdateUserCommandLastUsed(tx, message.RoomID, cmd.Name)
+		if err != nil {
+			return fmt.Errorf("failed to update last_used for command %s: %w", cmd.Name, err)
+		}
+
+		err = tx.Commit()
+		if err != nil {
+			return fmt.Errorf("failed to commit transaction to update last_used for command %s: %w", cmd.Name, err)
 		}
 	} else if hasPrefix {
 		return fmt.Errorf("unknown command: '%s' called by '%s'", args, message.Chatter.Name)

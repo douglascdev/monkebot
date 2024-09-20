@@ -15,7 +15,7 @@ var explore = types.Command{
 	Aliases:           []string{"e"},
 	Usage:             "explore",
 	Description:       "Venture into mysterious islands, uncovering hidden treasures or encountering perilous dangers. Each exploration can result in gaining or losing items.",
-	Cooldown:          5,
+	Cooldown:          30,
 	NoPrefix:          false,
 	NoPrefixShouldRun: nil,
 	CanDisable:        true,

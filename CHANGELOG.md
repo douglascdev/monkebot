@@ -7,3 +7,4 @@
 - Split setenabled into enable and disable
 - Fix config file being erased by attempting to run multiple bot instances with the same config
 - Implement replying to messages
+- Implement channel command cooldowns

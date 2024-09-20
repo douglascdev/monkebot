@@ -6,6 +6,7 @@ import (
 	"io"
 	"monkebot/config"
 	"sort"
+	"time"
 
 	_ "github.com/ncruces/go-sqlite3/driver"
 	_ "github.com/ncruces/go-sqlite3/embed"
@@ -85,6 +86,9 @@ var Migrations = DBMigrations{
 				SELECT id, (
 					SELECT c.id FROM command c WHERE c.name = 'disable'
 				), true FROM user`,
+		}},
+		{Version: 6, Stmts: []string{
+			"ALTER TABLE user_command ADD last_used INTEGER NOT NULL DEFAULT 1726849749",
 		}},
 	},
 }
@@ -185,6 +189,7 @@ func CurrentSchema() []string {
 			user_id TEXT NOT NULL,
 			command_id INTEGER NOT NULL,
 			is_enabled BOOL NOT NULL DEFAULT true,
+			last_used INTEGER NOT NULL DEFAULT 1726849749,
 			FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
 			FOREIGN KEY (command_id) REFERENCES command(id) ON DELETE CASCADE
 		)`,
@@ -463,6 +468,58 @@ func SelectIsUserCommandEnabled(tx *sql.Tx, channelID string, commandName string
 	}
 
 	return enabled, nil
+}
+
+func SelectIsCommandOnCooldown(tx *sql.Tx, channelID string, commandName string, cooldown int) (bool, error) {
+	var lastUsed int64
+	err := tx.QueryRow(`
+			SELECT uc.last_used
+			FROM user_command uc
+			INNER JOIN command c ON c.id = uc.command_id
+			WHERE c.name = ? AND uc.user_id = ?`,
+		commandName, channelID).Scan(&lastUsed)
+	if err != nil {
+		return false, fmt.Errorf("failed to select is_command_on_cooldown: %w", err)
+	}
+
+	cooldownDuration, err := time.ParseDuration(fmt.Sprintf("%ds", cooldown))
+	if err != nil {
+		return false, fmt.Errorf("failed to parse cooldown duration: %w", err)
+	}
+	lastUsedTime := time.Unix(lastUsed, 0)
+	return time.Now().Before(lastUsedTime.Add(cooldownDuration)), nil
+}
+
+func UpdateUserCommandLastUsed(tx *sql.Tx, channelID string, commandName string) error {
+	var (
+		err error
+		id  int
+	)
+	err = tx.QueryRow(`
+		SELECT uc.id FROM user_command uc
+		INNER JOIN command c ON c.id = uc.command_id
+		WHERE c.name = ? AND uc.user_id = ?
+		`, commandName, channelID).Scan(&id)
+	if err != nil {
+		return fmt.Errorf("failed to update command's %s cooldown: %w", commandName, err)
+	}
+
+	var result sql.Result
+	result, err = tx.Exec("UPDATE user_command SET last_used = ? WHERE id = ?", time.Now().Unix(), id)
+	if err != nil {
+		return fmt.Errorf("failed to update command's %s cooldown: %w", commandName, err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected != 1 {
+		return fmt.Errorf("invalid number of affected rows trying to update command's %s cooldown: %d", commandName, rowsAffected)
+	}
+
+	return nil
 }
 
 // Run migrations in the database.
