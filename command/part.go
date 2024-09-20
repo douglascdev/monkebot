@@ -74,6 +74,11 @@ var part = Command{
 			}{ID: message.Chatter.ID, Name: message.Chatter.Name})
 		}
 
+		if len(channelsToLeave) == 0 {
+			sender.Say(message.Channel, "❌Channel(s) not found")
+			return nil
+		}
+
 		// check if any of the channels are already in the database
 		var (
 			query    string
