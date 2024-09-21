@@ -198,7 +198,7 @@ func (t *Monkebot) Say(channel string, message string, params ...struct {
 	if potatFilters.Test(message, potatFilters.FilterStrict) {
 		log.Warn().
 			Str("channel", channel).
-			Str("message", message).
+			Str("msg", message).
 			Msg("message filtered")
 		t.TwitchClient.Say(channel, "⚠ Message withheld for containing a banned phrase...")
 		return
@@ -219,12 +219,12 @@ func (t *Monkebot) Say(channel string, message string, params ...struct {
 	s := response.String()
 
 	if replyMessageID != "" {
-		log.Debug().Str("channel", channel).Str("replyMessageID", replyMessageID).Str("message", s).Msg("replying")
+		log.Debug().Str("channel", channel).Str("replyMessageID", replyMessageID).Str("msg", s).Msg("replying")
 		t.TwitchClient.Reply(channel, replyMessageID, s)
 		return
 	}
 
-	log.Debug().Str("channel", channel).Str("message", s).Msg("sending message")
+	log.Debug().Str("channel", channel).Str("msg", s).Msg("sending message")
 	t.TwitchClient.Say(channel, s)
 }
 
