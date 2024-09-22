@@ -7,7 +7,7 @@ import (
 
 var help = types.Command{
 	Name:              "help",
-	Aliases:           []string{},
+	Aliases:           []string{"commands"},
 	Usage:             "help | help [command]",
 	Description:       "Get the full list of commands, or help with a specific command",
 	Cooldown:          5,
