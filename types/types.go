@@ -91,6 +91,9 @@ type MessageSender interface {
 
 	Join(channels ...string)
 	Part(channels ...string)
+	Ping() (time.Duration, error)
+
+	Uptime() time.Duration
 
 	Buttify(message string) string
 	ShouldButtify() bool

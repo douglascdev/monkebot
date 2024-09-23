@@ -4,6 +4,7 @@ import (
 	"monkebot/types"
 	"strings"
 	"testing"
+	"time"
 )
 
 // implementation of MessageSender for testing
@@ -19,8 +20,13 @@ func (m *MockSender) Say(channel string, message string, params ...struct {
 	m.responses = append(m.responses, message)
 }
 
-func (m *MockSender) Join(channels ...string) {}
-func (m *MockSender) Part(channels ...string) {}
+func (m *MockSender) Join(channels ...string)      {}
+func (m *MockSender) Part(channels ...string)      {}
+func (m *MockSender) Ping() (time.Duration, error) { return 0, nil }
+
+func (m *MockSender) Uptime() time.Duration {
+	return 0
+}
 
 func (m *MockSender) Buttify(message string) string {
 	return message

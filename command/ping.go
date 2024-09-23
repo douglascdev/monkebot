@@ -3,7 +3,11 @@ package command
 import (
 	"fmt"
 	"monkebot/types"
+	"runtime/metrics"
+	"strings"
 	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
 var ping = types.Command{
@@ -16,8 +20,30 @@ var ping = types.Command{
 	NoPrefixShouldRun: nil,
 	CanDisable:        false,
 	Execute: func(message *types.Message, sender types.MessageSender, args []string) error {
-		latency := fmt.Sprintf("%d ms", time.Since(message.Time).Milliseconds())
-		sender.Say(message.Channel, fmt.Sprintf("🐒 Pong! Latency: %s", latency))
+		responses := []string{
+			"🐒 Pong!",
+		}
+
+		latency, err := sender.Ping()
+		if err != nil {
+			log.Warn().Err(err).Msg("failed to get latency for ping message")
+		} else if latency == 0 {
+			log.Warn().Msg("failed to get latency for ping message, client sent no pings yet")
+		} else {
+			responses = append(responses, fmt.Sprintf("Latency: %dms", latency.Milliseconds()))
+		}
+
+		memSamples := []metrics.Sample{
+			{Name: "/memory/classes/total:bytes"},
+		}
+		metrics.Read(memSamples)
+
+		responses = append(responses,
+			fmt.Sprintf("Memory: %d MiB", memSamples[0].Value.Uint64()/1024/1024),
+			fmt.Sprintf("Uptime: %s", sender.Uptime().Round(time.Second)),
+		)
+
+		sender.Say(message.Channel, strings.Join(responses, " 🍌 "))
 		return nil
 	},
 }

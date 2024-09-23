@@ -23,6 +23,7 @@ type Monkebot struct {
 	TwitchClient *twitch.Client
 	Cfg          config.Config
 	db           *sql.DB
+	startTime    time.Time
 	buttifier    *buttifier.Buttifier
 }
 
@@ -40,6 +41,7 @@ func NewMonkebot(cfg config.Config, db *sql.DB) (*Monkebot, error) {
 		TwitchClient: client,
 		Cfg:          cfg,
 		db:           db,
+		startTime:    time.Now(),
 		buttifier:    butt,
 	}
 
@@ -226,6 +228,15 @@ func (t *Monkebot) Say(channel string, message string, params ...struct {
 
 	log.Debug().Str("channel", channel).Str("msg", s).Msg("sending message")
 	t.TwitchClient.Say(channel, s)
+}
+
+func (t *Monkebot) Ping() (duration time.Duration, err error) {
+	duration, err = t.TwitchClient.Latency()
+	return
+}
+
+func (t *Monkebot) Uptime() time.Duration {
+	return time.Since(t.startTime)
 }
 
 func (t *Monkebot) ShouldButtify() bool {
