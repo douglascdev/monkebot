@@ -17,7 +17,7 @@ var enable = types.Command{
 	CanDisable:        false,
 	Execute: func(message *types.Message, sender types.MessageSender, args []string) error {
 		if len(args) != 2 {
-			sender.Say(message.Chatter.Name, "Usage: enable [command]")
+			sender.Say(message.Channel, "Usage: enable [command]")
 			return nil
 		}
 
