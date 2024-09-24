@@ -12,7 +12,7 @@ var buttsbot = types.Command{
 	NoPrefixShouldRun: func(message *types.Message, sender types.MessageSender, args []string) bool {
 		return sender.ShouldButtify()
 	},
-	CanDisable: false,
+	CanDisable: true,
 	Execute: func(message *types.Message, sender types.MessageSender, args []string) error {
 		newSentence := sender.Buttify(message.Message)
 		if newSentence != message.Message {
