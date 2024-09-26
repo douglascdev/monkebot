@@ -56,8 +56,16 @@ type Message struct {
 
 func NewMessage(msg twitch.PrivateMessage, db *sql.DB, cfg *config.Config) *Message {
 	IsBroadcaster := msg.RoomID == msg.User.ID
-	_, IsMod := msg.Tags["mod"]
-	_, IsVIP := msg.Tags["vip"]
+
+	var (
+		IsMod bool
+		IsVIP bool
+	)
+	_, IsVIP = msg.Tags["vip"]
+	if value, tagFound := msg.Tags["mod"]; tagFound {
+		IsMod = value == "1"
+	}
+
 	return &Message{
 		ID:      msg.ID,
 		Message: msg.Message,
