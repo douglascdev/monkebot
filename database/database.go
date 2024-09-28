@@ -406,9 +406,19 @@ func UpdateUserPermission(tx *sql.Tx, username string, permissionName string) er
 		return fmt.Errorf("failed to find id for permission %s: %w", permissionName, err)
 	}
 
-	_, err = tx.Exec("UPDATE user SET permission_id = ? WHERE name = ?", newPermID, username)
+	var res sql.Result
+	res, err = tx.Exec("UPDATE user SET permission_id = ? WHERE name = ?", newPermID, username)
 	if err != nil {
 		return fmt.Errorf("failed to update user %s: %w", username, err)
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected != 1 {
+		return fmt.Errorf("invalid number of affected rows %d trying to update user %s's permission to %s", rowsAffected, username, permissionName)
 	}
 
 	return nil
@@ -420,11 +430,22 @@ func UpdateIsBotJoined(tx *sql.Tx, joined bool, userIDs ...string) error {
 		return fmt.Errorf("failed to update is_bot_joined for user %s: %w", userIDs, err)
 	}
 
+	var res sql.Result
 	for _, userID := range userIDs {
-		_, err = stmt.Exec(joined, userID)
+		res, err = stmt.Exec(joined, userID)
 		if err != nil {
 			return fmt.Errorf("failed to update is_bot_joined for user %s: %w", userID, err)
 		}
+
+		rowsAffected, err := res.RowsAffected()
+		if err != nil {
+			return fmt.Errorf("failed to get rows affected: %w", err)
+		}
+
+		if rowsAffected != 1 {
+			return fmt.Errorf("invalid number of affected rows %d trying to update is_bot_joined to %t for user %s", rowsAffected, joined, userID)
+		}
+
 	}
 
 	return nil
@@ -447,7 +468,7 @@ func UpdateIsUserCommandEnabled(tx *sql.Tx, enabled bool, channelID string, comm
 	}
 
 	if rowsAffected != 1 {
-		return fmt.Errorf("invalid number of affected rows: %d", rowsAffected)
+		return fmt.Errorf("invalid number of affected rows %d trying to update command %s to %t in channel %s", rowsAffected, commandName, enabled, channelID)
 	}
 
 	return nil
