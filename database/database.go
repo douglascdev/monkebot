@@ -109,7 +109,6 @@ func InitDB(driver string, dataSourceName string, cfgReader io.Reader, cfgWriter
 		pragmas := []string{
 			"PRAGMA main.page_size=8192;",
 			"PRAGMA main.cache_size=15000;",
-			"PRAGMA main.locking_mode=EXCLUSIVE;",
 			"PRAGMA main.synchronous=NORMAL;",
 			"PRAGMA main.journal_mode=WAL;",
 			"PRAGMA main.temp_store=MEMORY;",
