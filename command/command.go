@@ -63,14 +63,17 @@ type commandData struct {
 	isCmdOnChannelCoolDown bool
 	isCmdOnUserCoolDown    bool
 	isUserIgnored          bool
+	isOptedOut             bool
 }
 
 func getCommandData(message *types.Message, cmd types.Command) (*commandData, error) {
+	// TODO: turn selects into separate goroutines after migrating to postgres
 	result := &commandData{
 		isCmdEnabled:           false,
 		isCmdOnChannelCoolDown: false,
 		isCmdOnUserCoolDown:    false,
 		isUserIgnored:          false,
+		isOptedOut:             false,
 	}
 
 	tx, err := message.DB.Begin()
@@ -103,6 +106,11 @@ func getCommandData(message *types.Message, cmd types.Command) (*commandData, er
 	result.isCmdOnUserCoolDown, err = database.SelectIsCommandOnUserCooldown(tx, message.Chatter.ID, cmd.Name, cmd.UserCooldown)
 	if err != nil {
 		return nil, fmt.Errorf("failed to select user cooldown: %w", err)
+	}
+
+	result.isOptedOut, err = database.SelectIsCommandOptedOut(tx, message.Chatter.ID, cmd.Name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to select user's opted_out: %w", err)
 	}
 
 	return result, tx.Commit()
@@ -145,6 +153,11 @@ func HandleCommands(message *types.Message, sender types.MessageSender, config *
 
 				if cmdData.isCmdOnUserCoolDown {
 					log.Debug().Str("command", noPrefixCmd.Name).Str("channel", message.Channel).Msg("command ignored due to user command cooldown")
+					return nil
+				}
+
+				if cmdData.isOptedOut {
+					log.Debug().Str("command", noPrefixCmd.Name).Str("channel", message.Channel).Msg("command ignored due to opt out")
 					return nil
 				}
 
@@ -199,6 +212,11 @@ func HandleCommands(message *types.Message, sender types.MessageSender, config *
 
 		if cmdData.isCmdOnUserCoolDown {
 			log.Debug().Str("command", cmd.Name).Str("channel", message.Channel).Msg("command ignored due to user command cooldown")
+			return nil
+		}
+
+		if cmdData.isOptedOut {
+			log.Debug().Str("command", cmd.Name).Str("channel", message.Channel).Msg("command ignored due to opt out")
 			return nil
 		}
 

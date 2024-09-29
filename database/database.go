@@ -415,6 +415,21 @@ func SelectIsCommandOnUserCooldown(tx *sql.Tx, userID string, commandName string
 	return false, nil
 }
 
+func SelectIsCommandOptedOut(tx *sql.Tx, userID, commandName string) (bool, error) {
+	var optedOut bool
+	err := tx.QueryRow(`
+		SELECT cd.opted_out
+		FROM user_command_data cd
+		INNER JOIN command c ON c.id = cd.command_id
+		WHERE c.name = ? AND cd.user_id = ?
+		`, commandName, userID).Scan(&optedOut)
+	if err != nil {
+		return false, fmt.Errorf("failed to select user command data: %w", err)
+	}
+
+	return optedOut, nil
+}
+
 func UpdateUserCommandLastUsed(tx *sql.Tx, channelID string, commandName string, userID string) error {
 	var (
 		err error
