@@ -158,7 +158,7 @@ func HandleCommands(message *types.Message, sender types.MessageSender, config *
 				}
 				defer tx.Rollback()
 
-				err = database.UpdateUserCommandLastUsed(tx, message.RoomID, noPrefixCmd.Name)
+				err = database.UpdateUserCommandLastUsed(tx, message.RoomID, noPrefixCmd.Name, message.Chatter.ID)
 				if err != nil {
 					return fmt.Errorf("failed to update last_used for command %s: %w", noPrefixCmd.Name, err)
 				}
@@ -211,7 +211,7 @@ func HandleCommands(message *types.Message, sender types.MessageSender, config *
 		}
 		defer tx.Rollback()
 
-		err = database.UpdateUserCommandLastUsed(tx, message.RoomID, cmd.Name)
+		err = database.UpdateUserCommandLastUsed(tx, message.RoomID, cmd.Name, message.Chatter.ID)
 		if err != nil {
 			return fmt.Errorf("failed to update last_used for command %s: %w", cmd.Name, err)
 		}

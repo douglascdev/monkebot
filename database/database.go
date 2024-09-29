@@ -415,11 +415,16 @@ func SelectIsCommandOnUserCooldown(tx *sql.Tx, userID string, commandName string
 	return false, nil
 }
 
-func UpdateUserCommandLastUsed(tx *sql.Tx, channelID string, commandName string) error {
+func UpdateUserCommandLastUsed(tx *sql.Tx, channelID string, commandName string, userID string) error {
 	var (
 		err error
 		id  int
+		now int64
 	)
+
+	now = time.Now().Unix()
+
+	// update channel cooldown
 	err = tx.QueryRow(`
 		SELECT uc.id FROM user_command uc
 		INNER JOIN command c ON c.id = uc.command_id
@@ -430,7 +435,7 @@ func UpdateUserCommandLastUsed(tx *sql.Tx, channelID string, commandName string)
 	}
 
 	var result sql.Result
-	result, err = tx.Exec("UPDATE user_command SET last_used = ? WHERE id = ?", time.Now().Unix(), id)
+	result, err = tx.Exec("UPDATE user_command SET last_used = ? WHERE id = ?", now, id)
 	if err != nil {
 		return fmt.Errorf("failed to update command's %s cooldown: %w", commandName, err)
 	}
@@ -442,6 +447,25 @@ func UpdateUserCommandLastUsed(tx *sql.Tx, channelID string, commandName string)
 
 	if rowsAffected != 1 {
 		return fmt.Errorf("invalid number of affected rows trying to update command's %s cooldown: %d", commandName, rowsAffected)
+	}
+
+	// update user command cooldown
+	result, err = tx.Exec(`
+    UPDATE user_command_cooldown
+    SET last_used = ?
+    WHERE user_id = ? 
+    AND command_id = (SELECT id FROM command WHERE name = ?)`, now, userID, commandName)
+	if err != nil {
+		return fmt.Errorf("failed to update user command's %s cooldown: %w", commandName, err)
+	}
+
+	rowsAffected, err = result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected != 1 {
+		return fmt.Errorf("invalid number of affected rows trying to update user command's %s cooldown: %d", commandName, rowsAffected)
 	}
 
 	return nil

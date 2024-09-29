@@ -9,3 +9,4 @@
 - Implement replying to messages
 - Implement channel command cooldowns
 - Fix help not working with no-prefix commands
+- Command cooldowns for each user
