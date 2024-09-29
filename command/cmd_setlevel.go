@@ -28,14 +28,12 @@ var setLevel = types.Command{
 		tx, err := message.DB.Begin()
 		defer tx.Rollback()
 		if err != nil {
-			sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
 			return err
 		}
 
 		var isAdmin bool
 		isAdmin, err = database.SelectIsUserAdmin(tx, message.Chatter.ID)
 		if err != nil {
-			sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
 			return err
 		}
 		if !isAdmin {
@@ -46,7 +44,6 @@ var setLevel = types.Command{
 		var userExists bool
 		userExists, err = database.SelectUserExists(tx, args[1])
 		if err != nil {
-			sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
 			return err
 		}
 
@@ -61,19 +58,16 @@ var setLevel = types.Command{
 			// user isn't in the db but exists on twitch, so it's a new user
 			err = database.InsertUsers(tx, false, struct{ ID, Name string }{user.ID, user.Login})
 			if err != nil {
-				sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
 				return err
 			}
 		}
 
 		err = database.UpdateUserPermission(tx, args[1], args[2])
 		if err != nil {
-			sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
 			return err
 		}
 		err = tx.Commit()
 		if err != nil {
-			sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
 			return err
 		}
 

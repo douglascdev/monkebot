@@ -24,7 +24,6 @@ var join = types.Command{
 	Execute: func(message *types.Message, sender types.MessageSender, args []string) error {
 		tx, err := message.DB.Begin()
 		if err != nil {
-			sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
 			return err
 		}
 		defer tx.Rollback()
@@ -44,7 +43,6 @@ var join = types.Command{
 			isAdmin, err = database.SelectIsUserAdmin(tx, message.Chatter.ID)
 
 			if err != nil && err != sql.ErrNoRows {
-				sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
 				return err
 			}
 
@@ -56,7 +54,6 @@ var join = types.Command{
 			var twitchUsers *[]twitchapi.HelixUser
 			twitchUsers, err = twitchapi.GetUserByName(message.Cfg, args[1:]...)
 			if err != nil {
-				sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
 				return err
 			}
 			channelsToJoin = make([]struct {
@@ -120,7 +117,6 @@ var join = types.Command{
 
 		err = database.InsertUsers(tx, true, channelsToJoin...)
 		if err != nil {
-			sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
 			return err
 		}
 

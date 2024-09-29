@@ -54,20 +54,17 @@ var disable = types.Command{
 
 		tx, err := message.DB.Begin()
 		if err != nil {
-			sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
 			return err
 		}
 		defer tx.Rollback()
 
 		err = database.UpdateIsUserCommandEnabled(tx, false, message.RoomID, command.Name)
 		if err != nil {
-			sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
 			return err
 		}
 
 		err = tx.Commit()
 		if err != nil {
-			sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
 			return err
 		}
 
