@@ -9,13 +9,13 @@ import (
 )
 
 type Command struct {
-	Name        string
-	Aliases     []string
-	Usage       string
-	Description string
-	Cooldown    int
-	NoPrefix    bool
-	CanDisable  bool
+	Name            string
+	Aliases         []string
+	Usage           string
+	Description     string
+	ChannelCooldown int
+	NoPrefix        bool
+	CanDisable      bool
 
 	// `json:"-"` excludes these 2 fields from being serialized into the command list json
 	NoPrefixShouldRun func(message *Message, sender MessageSender, args []string) bool  `json:"-"`

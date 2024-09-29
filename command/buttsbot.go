@@ -3,12 +3,12 @@ package command
 import "monkebot/types"
 
 var buttsbot = types.Command{
-	Name:        "buttsbot",
-	Aliases:     []string{},
-	Usage:       "send any message in chat",
-	Description: "Replaces random syllables with butt",
-	Cooldown:    60,
-	NoPrefix:    true,
+	Name:            "buttsbot",
+	Aliases:         []string{},
+	Usage:           "send any message in chat",
+	Description:     "Replaces random syllables with butt",
+	ChannelCooldown: 60,
+	NoPrefix:        true,
 	NoPrefixShouldRun: func(message *types.Message, sender types.MessageSender, args []string) bool {
 		return sender.ShouldButtify()
 	},

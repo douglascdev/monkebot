@@ -8,12 +8,12 @@ import (
 var buttRegexp = regexp.MustCompile(`^butt`)
 
 var butt = types.Command{
-	Name:        "butt",
-	Aliases:     []string{},
-	Usage:       "butt[anything]",
-	Description: "Responds with butt to messages starting with butt",
-	Cooldown:    5,
-	NoPrefix:    true,
+	Name:            "butt",
+	Aliases:         []string{},
+	Usage:           "butt[anything]",
+	Description:     "Responds with butt to messages starting with butt",
+	ChannelCooldown: 5,
+	NoPrefix:        true,
 	NoPrefixShouldRun: func(message *types.Message, sender types.MessageSender, args []string) bool {
 		return buttRegexp.MatchString(message.Message)
 	},

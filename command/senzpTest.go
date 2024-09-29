@@ -18,7 +18,7 @@ var senzpTest = types.Command{
 	Aliases:           []string{},
 	Usage:             "senzpTest <text>",
 	Description:       "Translates senzp language to english",
-	Cooldown:          5,
+	ChannelCooldown:   5,
 	NoPrefix:          true,
 	NoPrefixShouldRun: shouldRun,
 	CanDisable:        true,

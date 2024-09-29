@@ -91,7 +91,7 @@ func getCommandData(message *types.Message, cmd types.Command) (*commandData, er
 		return nil, fmt.Errorf("failed to select user's is_ignored: %w", err)
 	}
 
-	result.isCmdOnCoolDown, err = database.SelectIsCommandOnCooldown(tx, message.RoomID, cmd.Name, cmd.Cooldown)
+	result.isCmdOnCoolDown, err = database.SelectIsCommandOnCooldown(tx, message.RoomID, cmd.Name, cmd.ChannelCooldown)
 	if err != nil {
 		return nil, fmt.Errorf("failed to select command cooldown: %w", err)
 	}

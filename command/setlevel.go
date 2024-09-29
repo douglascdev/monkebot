@@ -14,7 +14,7 @@ var setLevel = types.Command{
 	Aliases:           []string{"permission", "perm", "level"},
 	Usage:             "setlevel [username] [permission]",
 	Description:       "Set a user's permission level",
-	Cooldown:          5,
+	ChannelCooldown:   5,
 	NoPrefix:          false,
 	NoPrefixShouldRun: nil,
 	CanDisable:        false,

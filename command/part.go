@@ -16,7 +16,7 @@ var part = types.Command{
 	Aliases:           []string{"leave"},
 	Usage:             "part | part [channel]",
 	Description:       "Leave the message author's channel or the specified channel",
-	Cooldown:          5,
+	ChannelCooldown:   5,
 	NoPrefix:          false,
 	NoPrefixShouldRun: nil,
 	CanDisable:        false,
