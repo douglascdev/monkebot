@@ -84,6 +84,24 @@ var Migrations = DBMigrations{
 		{Version: 6, Stmts: []string{
 			"ALTER TABLE user_command ADD last_used INTEGER NOT NULL DEFAULT 1726849749",
 		}},
+		{Version: 7, Stmts: []string{
+			`CREATE INDEX idx_user_command ON user_command(user_id, command_id)`,
+			`CREATE TABLE user_command_cooldown (
+				id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+				user_id INTEGER NOT NULL,
+				command_id INTEGER NOT NULL,
+				last_used INTEGER NOT NULL DEFAULT 1726849749,
+				FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
+				FOREIGN KEY (command_id) REFERENCES command(id) ON DELETE CASCADE
+			)`,
+			`CREATE INDEX idx_user_command_cooldown ON user_command_cooldown(user_id, command_id, last_used)`,
+			`
+			INSERT INTO user_command_cooldown (user_id, command_id)
+			SELECT u.id, c.id
+			FROM user u
+			CROSS JOIN command c
+			`,
+		}},
 	},
 }
 
