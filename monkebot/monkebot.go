@@ -49,6 +49,10 @@ func NewMonkebot(cfg config.Config, db *sql.DB) (*Monkebot, error) {
 		startTime := time.Now()
 		normalizedMsg := types.NewMessage(message, db, &cfg)
 		if err := command.HandleCommands(normalizedMsg, mb, &cfg); err != nil {
+			mb.Say(message.Channel, "❌Command failed, please try again or contact an admin", struct {
+				Param types.SenderParam
+				Value string
+			}{types.ReplyMessageID, message.ID})
 			log.Err(err).Msg("command failed")
 		}
 		internalLatency := fmt.Sprintf("%d ms", time.Since(startTime).Milliseconds())
