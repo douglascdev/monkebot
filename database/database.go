@@ -377,7 +377,7 @@ func SelectIsUserCommandEnabled(tx *sql.Tx, channelID string, commandName string
 	return enabled, nil
 }
 
-func SelectIsCommandOnCooldown(tx *sql.Tx, channelID string, commandName string, cooldown int) (bool, error) {
+func SelectIsCommandOnChannelCooldown(tx *sql.Tx, channelID string, commandName string, cooldown int) (bool, error) {
 	var lastUsed int64
 	err := tx.QueryRow(`
 			SELECT uc.last_used
@@ -395,6 +395,24 @@ func SelectIsCommandOnCooldown(tx *sql.Tx, channelID string, commandName string,
 	}
 	lastUsedTime := time.Unix(lastUsed, 0)
 	return time.Now().Before(lastUsedTime.Add(cooldownDuration)), nil
+}
+
+func SelectIsCommandOnUserCooldown(tx *sql.Tx, userID string, commandName string, cooldownSeconds int) (bool, error) {
+	t := time.Now().Add(-(time.Duration(cooldownSeconds) * time.Second)).Unix()
+	row := tx.QueryRow(`
+		SELECT 1
+		FROM user_command_cooldown cd
+		INNER JOIN command c ON c.id = cd.command_id
+		WHERE c.name = ? AND cd.user_id = ? AND cd.last_used <= ?
+		`, commandName, userID, t).Scan(&t)
+	if row == sql.ErrNoRows {
+		return true, nil
+	}
+	if row != nil {
+		return false, fmt.Errorf("failed to select user command cooldown: %w", row)
+	}
+
+	return false, nil
 }
 
 func UpdateUserCommandLastUsed(tx *sql.Tx, channelID string, commandName string) error {

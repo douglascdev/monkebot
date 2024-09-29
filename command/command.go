@@ -57,16 +57,18 @@ func createCommandMap(commands []types.Command) map[string]types.Command {
 }
 
 type commandData struct {
-	isCmdEnabled    bool
-	isCmdOnCoolDown bool
-	isUserIgnored   bool
+	isCmdEnabled           bool
+	isCmdOnChannelCoolDown bool
+	isCmdOnUserCoolDown    bool
+	isUserIgnored          bool
 }
 
 func getCommandData(message *types.Message, cmd types.Command) (*commandData, error) {
 	result := &commandData{
-		isCmdEnabled:    false,
-		isCmdOnCoolDown: false,
-		isUserIgnored:   false,
+		isCmdEnabled:           false,
+		isCmdOnChannelCoolDown: false,
+		isCmdOnUserCoolDown:    false,
+		isUserIgnored:          false,
 	}
 
 	tx, err := message.DB.Begin()
@@ -91,9 +93,14 @@ func getCommandData(message *types.Message, cmd types.Command) (*commandData, er
 		return nil, fmt.Errorf("failed to select user's is_ignored: %w", err)
 	}
 
-	result.isCmdOnCoolDown, err = database.SelectIsCommandOnCooldown(tx, message.RoomID, cmd.Name, cmd.ChannelCooldown)
+	result.isCmdOnChannelCoolDown, err = database.SelectIsCommandOnChannelCooldown(tx, message.RoomID, cmd.Name, cmd.ChannelCooldown)
 	if err != nil {
 		return nil, fmt.Errorf("failed to select command cooldown: %w", err)
+	}
+
+	result.isCmdOnUserCoolDown, err = database.SelectIsCommandOnUserCooldown(tx, message.Chatter.ID, cmd.Name, cmd.UserCooldown)
+	if err != nil {
+		return nil, fmt.Errorf("failed to select user cooldown: %w", err)
 	}
 
 	return result, tx.Commit()
@@ -129,8 +136,13 @@ func HandleCommands(message *types.Message, sender types.MessageSender, config *
 					return nil
 				}
 
-				if cmdData.isCmdOnCoolDown {
+				if cmdData.isCmdOnChannelCoolDown {
 					log.Debug().Str("command", noPrefixCmd.Name).Str("channel", message.Channel).Msg("command ignored due to channel cooldown")
+					return nil
+				}
+
+				if cmdData.isCmdOnUserCoolDown {
+					log.Debug().Str("command", noPrefixCmd.Name).Str("channel", message.Channel).Msg("command ignored due to user command cooldown")
 					return nil
 				}
 
@@ -178,8 +190,13 @@ func HandleCommands(message *types.Message, sender types.MessageSender, config *
 			return nil
 		}
 
-		if cmdData.isCmdOnCoolDown {
+		if cmdData.isCmdOnChannelCoolDown {
 			log.Debug().Str("command", cmd.Name).Str("channel", message.Channel).Msg("command ignored due to channel cooldown")
+			return nil
+		}
+
+		if cmdData.isCmdOnUserCoolDown {
+			log.Debug().Str("command", cmd.Name).Str("channel", message.Channel).Msg("command ignored due to user command cooldown")
 			return nil
 		}
 
