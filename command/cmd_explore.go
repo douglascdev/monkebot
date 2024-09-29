@@ -16,7 +16,7 @@ var explore = types.Command{
 	Usage:             "explore",
 	Description:       "Venture into mysterious islands, uncovering hidden treasures or encountering perilous dangers. Each exploration can result in gaining or losing items.",
 	ChannelCooldown:   5,
-	UserCooldown:      60 * 10,
+	UserCooldown:      60 * 30,
 	NoPrefix:          false,
 	NoPrefixShouldRun: nil,
 	CanDisable:        true,
