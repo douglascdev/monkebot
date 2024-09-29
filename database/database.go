@@ -254,16 +254,16 @@ func InsertUsers(tx *sql.Tx, joinBot bool, users ...struct{ ID, Name string }) e
 			return fmt.Errorf("failed to get inserted user's id")
 		}
 
-		// insert user command cooldowns for each command
+		// insert user command data for each command
 		_, err = tx.Exec(`
-			INSERT INTO user_command_cooldown (user_id, command_id)
+			INSERT INTO user_command_data (user_id, command_id)
 			SELECT u.id, c.id
 			FROM user u
 			CROSS JOIN command c
 			WHERE u.id = ?
 		`, user.ID)
 		if err != nil {
-			return fmt.Errorf("failed to insert user command cooldowns: %w", err)
+			return fmt.Errorf("failed to insert user command data: %w", err)
 		}
 
 		log.Info().Int64("user_id", userID).Str("name", user.Name).Msg("inserted new user")
@@ -401,7 +401,7 @@ func SelectIsCommandOnUserCooldown(tx *sql.Tx, userID string, commandName string
 	t := time.Now().Add(-(time.Duration(cooldownSeconds) * time.Second)).Unix()
 	row := tx.QueryRow(`
 		SELECT 1
-		FROM user_command_cooldown cd
+		FROM user_command_data cd
 		INNER JOIN command c ON c.id = cd.command_id
 		WHERE c.name = ? AND cd.user_id = ? AND cd.last_used <= ?
 		`, commandName, userID, t).Scan(&t)
@@ -409,7 +409,7 @@ func SelectIsCommandOnUserCooldown(tx *sql.Tx, userID string, commandName string
 		return true, nil
 	}
 	if row != nil {
-		return false, fmt.Errorf("failed to select user command cooldown: %w", row)
+		return false, fmt.Errorf("failed to select user command data: %w", row)
 	}
 
 	return false, nil
@@ -451,7 +451,7 @@ func UpdateUserCommandLastUsed(tx *sql.Tx, channelID string, commandName string,
 
 	// update user command cooldown
 	result, err = tx.Exec(`
-    UPDATE user_command_cooldown
+    UPDATE user_command_data
     SET last_used = ?
     WHERE user_id = ? 
     AND command_id = (SELECT id FROM command WHERE name = ?)`, now, userID, commandName)

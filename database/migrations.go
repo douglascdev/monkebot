@@ -102,6 +102,9 @@ var Migrations = DBMigrations{
 			CROSS JOIN command c
 			`,
 		}},
+		{Version: 8, Stmts: []string{
+			"ALTER TABLE user_command_cooldown RENAME TO user_command_data",
+		}},
 	},
 }
 

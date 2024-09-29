@@ -32,7 +32,7 @@ func CurrentSchema() []string {
 		)`,
 		`CREATE INDEX idx_is_enabled ON user_command(is_enabled)`,
 		`CREATE INDEX idx_user_command ON user_command(user_id, command_id)`,
-		`CREATE TABLE user_command_cooldown (
+		`CREATE TABLE user_command_data (
 			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 			user_id INTEGER NOT NULL,
 			command_id INTEGER NOT NULL,
@@ -40,7 +40,7 @@ func CurrentSchema() []string {
 			FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
 			FOREIGN KEY (command_id) REFERENCES command(id) ON DELETE CASCADE
 		)`,
-		`CREATE INDEX idx_user_command_cooldown ON user_command_cooldown(user_id, command_id, last_used)`,
+		`CREATE INDEX idx_user_command_data ON user_command_data(user_id, command_id, last_used)`,
 		`CREATE TABLE rpg_item (
 			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 			name TEXT NOT NULL,
