@@ -21,13 +21,26 @@ var help = types.Command{
 			return nil
 		}
 
-		cmd, ok := commandMap[args[1]]
-		if !ok {
-			sender.Say(message.Channel, fmt.Sprintf("❌Unknown command '%s'", args[1]))
-			return nil
+		var (
+			command types.Command
+			ok      bool
+		)
+		if command, ok = commandMap[args[1]]; !ok {
+			found := false
+			for _, cmd := range commandsNoPrefix {
+				if cmd.Name == args[1] {
+					command = cmd
+					found = true
+					break
+				}
+			}
+			if !found {
+				sender.Say(message.Channel, fmt.Sprintf("❌Unknown command '%s'", args[1]))
+				return nil
+			}
 		}
 
-		sender.Say(message.Channel, fmt.Sprintf("🐒 Usage: %s", cmd.Usage))
+		sender.Say(message.Channel, fmt.Sprintf("🐒 Usage: %s", command.Usage))
 		return nil
 	},
 }

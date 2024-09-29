@@ -8,3 +8,4 @@
 - Fix config file being erased by attempting to run multiple bot instances with the same config
 - Implement replying to messages
 - Implement channel command cooldowns
+- Fix help not working with no-prefix commands
