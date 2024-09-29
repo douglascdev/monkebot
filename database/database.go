@@ -423,6 +423,9 @@ func SelectIsCommandOptedOut(tx *sql.Tx, userID, commandName string) (bool, erro
 		INNER JOIN command c ON c.id = cd.command_id
 		WHERE c.name = ? AND cd.user_id = ?
 		`, commandName, userID).Scan(&optedOut)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
 	if err != nil {
 		return false, fmt.Errorf("failed to select user command data: %w", err)
 	}
