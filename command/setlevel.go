@@ -3,6 +3,7 @@ package command
 import (
 	"fmt"
 	"monkebot/database"
+	"monkebot/twitchapi"
 	"monkebot/types"
 
 	"github.com/rs/zerolog/log"
@@ -18,6 +19,11 @@ var setLevel = types.Command{
 	NoPrefixShouldRun: nil,
 	CanDisable:        false,
 	Execute: func(message *types.Message, sender types.MessageSender, args []string) error {
+		if len(args) != 3 {
+			sender.Say(message.Channel, "❌Usage: setlevel <username> <permission>")
+			return nil
+		}
+
 		tx, err := message.DB.Begin()
 		defer tx.Rollback()
 		if err != nil {
@@ -36,9 +42,27 @@ var setLevel = types.Command{
 			return nil
 		}
 
-		if len(args) != 3 {
-			sender.Say(message.Channel, "❌Usage: setlevel <username> <permission>")
-			return nil
+		var userExists bool
+		userExists, err = database.SelectUserExists(tx, args[1])
+		if err != nil {
+			sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
+			return err
+		}
+
+		if !userExists {
+			var users *[]twitchapi.HelixUser
+			users, err = twitchapi.GetUserByName(message.Cfg, args[1])
+			if err != nil {
+				sender.Say(message.Channel, fmt.Sprintf("❌User '%s' not found", args[1]))
+				return err
+			}
+			user := (*users)[0]
+			// user isn't in the db but exists on twitch, so it's a new user
+			err = database.InsertUsers(tx, false, struct{ ID, Name string }{user.ID, user.Login})
+			if err != nil {
+				sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
+				return err
+			}
 		}
 
 		err = database.UpdateUserPermission(tx, args[1], args[2])

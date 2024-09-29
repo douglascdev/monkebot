@@ -474,6 +474,15 @@ func UpdateIsUserCommandEnabled(tx *sql.Tx, enabled bool, channelID string, comm
 	return nil
 }
 
+func SelectUserExists(tx *sql.Tx, username string) (bool, error) {
+	var exists bool
+	err := tx.QueryRow("SELECT EXISTS(SELECT 1 FROM user WHERE name = ?)", username).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("failed to select user exists: %w", err)
+	}
+	return exists, nil
+}
+
 func SelectIsUserCommandEnabled(tx *sql.Tx, channelID string, commandName string) (bool, error) {
 	var enabled bool
 	err := tx.QueryRow(`

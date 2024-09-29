@@ -96,8 +96,8 @@ func NewMonkebot(cfg config.Config, db *sql.DB) (*Monkebot, error) {
 			return
 		}
 
-		var twitchUsers []*twitch.User
-		twitchUsers, err = twitchapi.GetUserByName(&cfg, cfg.InitialChannels...)
+		var helixUsers *[]twitchapi.HelixUser
+		helixUsers, err = twitchapi.GetUserByName(&cfg, cfg.InitialChannels...)
 		if err != nil {
 			log.Err(err).Strs("channels", cfg.InitialChannels).Msg("failed to get helix data for users")
 			return
@@ -107,11 +107,11 @@ func NewMonkebot(cfg config.Config, db *sql.DB) (*Monkebot, error) {
 			ID   string
 			Name string
 		}
-		for _, twitchUser := range twitchUsers {
+		for _, twitchUser := range *helixUsers {
 			users = append(users, struct {
 				ID   string
 				Name string
-			}{twitchUser.ID, twitchUser.Name})
+			}{twitchUser.ID, twitchUser.Login})
 		}
 
 		err = database.InsertUsers(tx, true, users...)
@@ -131,10 +131,10 @@ func NewMonkebot(cfg config.Config, db *sql.DB) (*Monkebot, error) {
 			}
 		}
 
-		for _, twitchUser := range twitchUsers {
+		for _, twitchUser := range *helixUsers {
 			err = database.InsertUserCommands(tx, twitchUser.ID, cmdNames...)
 			if err != nil {
-				log.Err(err).Str("name", twitchUser.Name).Str("id", twitchUser.ID).Msg("failed to insert user commands for user")
+				log.Err(err).Str("name", twitchUser.Login).Str("id", twitchUser.ID).Msg("failed to insert user commands for user")
 				return
 			}
 		}

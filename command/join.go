@@ -52,7 +52,8 @@ var join = types.Command{
 				return nil
 			}
 
-			twitchUsers, err := twitchapi.GetUserByName(message.Cfg, args[1:]...)
+			var twitchUsers *[]twitchapi.HelixUser
+			twitchUsers, err = twitchapi.GetUserByName(message.Cfg, args[1:]...)
 			if err != nil {
 				sender.Say(message.Channel, "❌Command failed, please try again or contact an admin")
 				return err
@@ -60,13 +61,13 @@ var join = types.Command{
 			channelsToJoin = make([]struct {
 				ID   string
 				Name string
-			}, 0, len(twitchUsers))
+			}, 0, len(*twitchUsers))
 
-			for _, user := range twitchUsers {
+			for _, user := range *twitchUsers {
 				channelsToJoin = append(channelsToJoin, struct {
 					ID   string
 					Name string
-				}{ID: user.ID, Name: user.Name})
+				}{ID: user.ID, Name: user.Login})
 			}
 		} else {
 			channelsToJoin = append(channelsToJoin, struct {

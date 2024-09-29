@@ -8,11 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gempir/go-twitch-irc/v4"
 	"github.com/rs/zerolog/log"
 )
 
-type helixUser struct {
+type HelixUser struct {
 	ID              string    `json:"id"`
 	Login           string    `json:"login"`
 	DisplayName     string    `json:"display_name"`
@@ -27,10 +26,10 @@ type helixUser struct {
 }
 
 type helixUserResponse struct {
-	Data []helixUser `json:"data"`
+	Data []HelixUser `json:"data"`
 }
 
-func GetUserByName(config *config.Config, names ...string) ([]*twitch.User, error) {
+func GetUserByName(config *config.Config, names ...string) (*[]HelixUser, error) {
 	if len(names) == 0 {
 		return nil, nil
 	}
@@ -64,21 +63,11 @@ func GetUserByName(config *config.Config, names ...string) ([]*twitch.User, erro
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
-	var users []*twitch.User
-	for _, user := range response.Data {
-		twitchUser := &twitch.User{
-			ID:          user.ID,
-			Name:        user.Login,
-			DisplayName: user.DisplayName,
-		}
 
-		users = append(users, twitchUser)
-	}
-
-	return users, nil
+	return &response.Data, nil
 }
 
-func GetUserByID(config config.Config, ids ...string) ([]*twitch.User, error) {
+func GetUserByID(config config.Config, ids ...string) (*[]HelixUser, error) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
@@ -111,16 +100,6 @@ func GetUserByID(config config.Config, ids ...string) ([]*twitch.User, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
-	var users []*twitch.User
-	for _, user := range response.Data {
-		twitchUser := &twitch.User{
-			ID:          user.ID,
-			Name:        user.Login,
-			DisplayName: user.DisplayName,
-		}
 
-		users = append(users, twitchUser)
-	}
-
-	return users, nil
+	return &response.Data, nil
 }
