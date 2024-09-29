@@ -17,6 +17,7 @@ var join = types.Command{
 	Usage:             "join | join [channel]",
 	Description:       "Join the message author's channel or the specified channel",
 	ChannelCooldown:   5,
+	UserCooldown:      5,
 	NoPrefix:          false,
 	NoPrefixShouldRun: nil,
 	CanDisable:        false,

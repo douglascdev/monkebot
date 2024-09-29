@@ -9,7 +9,8 @@ function loadTableData(data) {
       <td>${command.Aliases.join(', ') || 'None'}</td>
       <td>${command.Usage}</td>
       <td>${command.Description}</td>
-      <td>${command.Cooldown}</td>
+      <td>${command.ChannelCooldown}</td>
+      <td>${command.UserCooldown}</td>
       <td>${command.NoPrefix}</td>
       <td>${command.CanDisable}</td>
     `;

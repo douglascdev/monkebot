@@ -13,6 +13,7 @@ var butt = types.Command{
 	Usage:           "butt[anything]",
 	Description:     "Responds with butt to messages starting with butt",
 	ChannelCooldown: 5,
+	UserCooldown:    5,
 	NoPrefix:        true,
 	NoPrefixShouldRun: func(message *types.Message, sender types.MessageSender, args []string) bool {
 		return buttRegexp.MatchString(message.Message)

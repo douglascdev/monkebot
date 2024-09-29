@@ -12,6 +12,7 @@ var disable = types.Command{
 	Usage:             "disable [command]",
 	Description:       "Disables a command for all users in the channel",
 	ChannelCooldown:   5,
+	UserCooldown:      5,
 	NoPrefix:          false,
 	NoPrefixShouldRun: nil,
 	CanDisable:        false,

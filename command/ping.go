@@ -16,6 +16,7 @@ var ping = types.Command{
 	Usage:             "ping",
 	Description:       "Responds with pong and latency to twitch in milliseconds",
 	ChannelCooldown:   5,
+	UserCooldown:      5,
 	NoPrefix:          false,
 	NoPrefixShouldRun: nil,
 	CanDisable:        false,

@@ -8,6 +8,7 @@ var buttsbot = types.Command{
 	Usage:           "send any message in chat",
 	Description:     "Replaces random syllables with butt",
 	ChannelCooldown: 60,
+	UserCooldown:    60 * 5,
 	NoPrefix:        true,
 	NoPrefixShouldRun: func(message *types.Message, sender types.MessageSender, args []string) bool {
 		return sender.ShouldButtify()

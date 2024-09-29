@@ -15,6 +15,7 @@ var setLevel = types.Command{
 	Usage:             "setlevel [username] [permission]",
 	Description:       "Set a user's permission level",
 	ChannelCooldown:   5,
+	UserCooldown:      5,
 	NoPrefix:          false,
 	NoPrefixShouldRun: nil,
 	CanDisable:        false,

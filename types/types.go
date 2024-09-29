@@ -14,6 +14,7 @@ type Command struct {
 	Usage           string
 	Description     string
 	ChannelCooldown int
+	UserCooldown    int
 	NoPrefix        bool
 	CanDisable      bool
 

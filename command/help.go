@@ -11,6 +11,7 @@ var help = types.Command{
 	Usage:             "help | help [command]",
 	Description:       "Get the full list of commands, or help with a specific command",
 	ChannelCooldown:   5,
+	UserCooldown:      5,
 	NoPrefix:          false,
 	NoPrefixShouldRun: nil,
 	CanDisable:        false,

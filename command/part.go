@@ -17,6 +17,7 @@ var part = types.Command{
 	Usage:             "part | part [channel]",
 	Description:       "Leave the message author's channel or the specified channel",
 	ChannelCooldown:   5,
+	UserCooldown:      5,
 	NoPrefix:          false,
 	NoPrefixShouldRun: nil,
 	CanDisable:        false,

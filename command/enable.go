@@ -12,6 +12,7 @@ var enable = types.Command{
 	Usage:             "enable [command]",
 	Description:       "Enables a command for all users in the channel",
 	ChannelCooldown:   5,
+	UserCooldown:      5,
 	NoPrefix:          false,
 	NoPrefixShouldRun: nil,
 	CanDisable:        false,
