@@ -105,6 +105,25 @@ var Migrations = DBMigrations{
 		{Version: 8, Stmts: []string{
 			"ALTER TABLE user_command_cooldown RENAME TO user_command_data",
 		}},
+		{Version: 9, Stmts: []string{
+			"ALTER TABLE user_command_data ADD opted_out BOOL NOT NULL DEFAULT false",
+			"INSERT INTO command (name) VALUES ('optin'), ('optout')",
+			`INSERT INTO user_command (user_id, command_id, is_enabled)
+				SELECT id, (
+					SELECT c.id FROM command c WHERE c.name = 'optin'
+				), true FROM user`,
+			`INSERT INTO user_command (user_id, command_id, is_enabled)
+				SELECT id, (
+					SELECT c.id FROM command c WHERE c.name = 'optout'
+				), true FROM user`,
+			`
+			INSERT INTO user_command_data (user_id, command_id)
+			SELECT u.id, c.id
+			FROM user u
+			CROSS JOIN command c
+			WHERE c.name IN ('optin', 'optout')
+			`,
+		}},
 	},
 }
 

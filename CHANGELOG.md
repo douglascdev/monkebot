@@ -10,3 +10,4 @@
 - Implement channel command cooldowns
 - Fix help not working with no-prefix commands
 - Command cooldowns for each user
+- Add `optin` and `optout` commands

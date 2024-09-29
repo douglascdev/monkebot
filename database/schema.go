@@ -37,6 +37,7 @@ func CurrentSchema() []string {
 			user_id INTEGER NOT NULL,
 			command_id INTEGER NOT NULL,
 			last_used INTEGER NOT NULL DEFAULT 1726849749,
+			opted_out BOOL NOT NULL DEFAULT false,
 			FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
 			FOREIGN KEY (command_id) REFERENCES command(id) ON DELETE CASCADE
 		)`,

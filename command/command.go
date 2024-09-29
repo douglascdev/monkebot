@@ -23,6 +23,8 @@ var Commands = []types.Command{
 	explore,
 	enable,
 	disable,
+	optout,
+	optin,
 }
 
 var (
