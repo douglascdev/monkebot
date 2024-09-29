@@ -253,8 +253,22 @@ func InsertUsers(tx *sql.Tx, joinBot bool, users ...struct{ ID, Name string }) e
 		if err != nil {
 			return fmt.Errorf("failed to get inserted user's id")
 		}
+
+		// insert user command cooldowns for each command
+		_, err = tx.Exec(`
+			INSERT INTO user_command_cooldown (user_id, command_id)
+			SELECT u.id, c.id
+			FROM user u
+			CROSS JOIN command c
+			WHERE u.id = ?
+		`, user.ID)
+		if err != nil {
+			return fmt.Errorf("failed to insert user command cooldowns: %w", err)
+		}
+
 		log.Info().Int64("user_id", userID).Str("name", user.Name).Msg("inserted new user")
 	}
+
 	return nil
 }
 
