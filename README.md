@@ -1,6 +1,6 @@
 # monkebot
 
-monkebot is a prototype twitch bot made in Go. Type `\join` in the bot's channel to join it to your chat.
+monkebot is a prototype twitch bot made in Go. Type `\join` in the [bot's channel](https://www.twitch.tv/hashtablebot/chat) to join it to your chat.
 
 ## Commands
 
