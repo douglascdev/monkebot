@@ -29,6 +29,10 @@ git push origin my-improvement-on-x-y-z
 Then make a [pull request](https://github.com/douglascdev/monkebot/pulls).
 
 ## Running an instance
+Requires:
+  - [Go](https://go.dev/dl/)
+  - [Git](https://git-scm.com/downloads)
+
 The bot takes arguments using CLI arguments, either using `go run main.go` to run straigth from source code or the binary in the [releases section](https://github.com/douglascdev/monkebot/releases) with `./monkebot-linux` (on linux, remember to `chmod +x monkebot-linux` first).
 ### Token
 You may use a website like [twitch token generator](https://twitchtokengenerator.com/) to get a token for your bot. You'll also need a client id by creating an application in the [twitch dev console](https://dev.twitch.tv/console). These will be placed in the bot's config file as specified in the following section.
