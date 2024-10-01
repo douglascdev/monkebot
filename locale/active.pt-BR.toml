@@ -1,0 +1,3 @@
+["help.commands"]
+hash = "sha1-24813b0e0758931fab5f4a3bce3a386f783a711d"
+other = "🐒 Comandos: {{.Url}} ● Para ajuda com um comando específico: help <comando>"

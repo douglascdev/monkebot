@@ -2,7 +2,10 @@ package command
 
 import (
 	"fmt"
+	"monkebot/locale"
 	"monkebot/types"
+
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 )
 
 var help = types.Command{
@@ -16,8 +19,19 @@ var help = types.Command{
 	NoPrefixShouldRun: nil,
 	CanDisable:        false,
 	Execute: func(message *types.Message, sender types.MessageSender, args []string) error {
+		userLocale := "pt-BR"
+
 		if len(args) <= 1 {
-			sender.Say(message.Channel, "🐒 Commands: https://douglascdev.github.io/monkebot/ ● For help with a specific command: help <command>")
+			msg := &i18n.LocalizeConfig{
+				DefaultMessage: &i18n.Message{
+					ID:    "help.commands",
+					Other: "🐒 Commands: {{.Url}} ● For help with a specific command: help <command>",
+				},
+				TemplateData: map[string]string{
+					"Url": "https://douglascdev.github.io/monkebot/",
+				},
+			}
+			sender.Say(message.Channel, locale.PT.MustLocalize(msg))
 			return nil
 		}
 

@@ -3,11 +3,14 @@ module monkebot
 go 1.23.0
 
 require (
+	github.com/BurntSushi/toml v1.3.2
 	github.com/Potat-Industries/go-potatFilters v0.1.3
 	github.com/douglascdev/buttifier v0.1.3
 	github.com/gempir/go-twitch-irc/v4 v4.0.0
 	github.com/ncruces/go-sqlite3 v0.18.2
+	github.com/nicksnyder/go-i18n/v2 v2.4.0
 	github.com/rs/zerolog v1.33.0
+	golang.org/x/text v0.18.0
 )
 
 require (
