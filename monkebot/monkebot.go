@@ -2,6 +2,7 @@ package monkebot
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"monkebot/command"
 	"monkebot/config"
@@ -48,7 +49,16 @@ func NewMonkebot(cfg config.Config, db *sql.DB) (*Monkebot, error) {
 	client.OnPrivateMessage(func(message twitch.PrivateMessage) {
 		startTime := time.Now()
 		normalizedMsg := types.NewMessage(message, db, &cfg)
-		if err := command.HandleCommands(normalizedMsg, mb, &cfg); err != nil {
+		err := command.HandleCommands(normalizedMsg, mb, &cfg)
+		if errors.Is(err, command.UnknownCommandErr) {
+			log.Warn().Str("user", message.User.Name).Str("msg", message.Message).Msg("unknown command")
+			mb.Say(message.Channel, "❌Unknown command", struct {
+				Param types.SenderParam
+				Value string
+			}{types.ReplyMessageID, message.ID})
+			return
+		}
+		if err != nil {
 			mb.Say(message.Channel, "❌Command failed, please try again or contact an admin", struct {
 				Param types.SenderParam
 				Value string

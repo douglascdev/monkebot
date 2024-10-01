@@ -2,6 +2,7 @@ package command
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"monkebot/config"
 	"monkebot/database"
@@ -26,6 +27,8 @@ var Commands = []types.Command{
 	optout,
 	optin,
 }
+
+var UnknownCommandErr = errors.New("unknown command")
 
 var (
 	commandMap       map[string]types.Command
@@ -242,7 +245,7 @@ func HandleCommands(message *types.Message, sender types.MessageSender, config *
 		}
 
 	} else if hasPrefix {
-		return fmt.Errorf("unknown command: '%s' called by '%s'", args, message.Chatter.Name)
+		return fmt.Errorf("%w: '%s' called by '%s'", UnknownCommandErr, args, message.Chatter.Name)
 	}
 
 	return nil
