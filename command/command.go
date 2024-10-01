@@ -66,7 +66,7 @@ type commandData struct {
 	isOptedOut             bool
 }
 
-func getCommandData(message *types.Message, cmd types.Command) (*commandData, error) {
+func getCommandData(tx *sql.Tx, message *types.Message, cmd types.Command) (*commandData, error) {
 	// TODO: turn selects into separate goroutines after migrating to postgres
 	result := &commandData{
 		isCmdEnabled:           false,
@@ -76,11 +76,7 @@ func getCommandData(message *types.Message, cmd types.Command) (*commandData, er
 		isOptedOut:             false,
 	}
 
-	tx, err := message.DB.Begin()
-	if err != nil {
-		return nil, fmt.Errorf("failed to begin commandData transaction: %w", err)
-	}
-	defer tx.Rollback()
+	var err error
 
 	if !cmd.CanDisable {
 		result.isCmdEnabled = true
@@ -113,15 +109,23 @@ func getCommandData(message *types.Message, cmd types.Command) (*commandData, er
 		return nil, fmt.Errorf("failed to select user's opted_out: %w", err)
 	}
 
-	return result, tx.Commit()
+	return result, nil
 }
 
 func HandleCommands(message *types.Message, sender types.MessageSender, config *config.Config) error {
 	var (
 		cmdData *commandData
 		args    []string
+		tx      *sql.Tx
 		err     error
 	)
+
+	tx, err = message.DB.Begin()
+	if err != nil {
+		log.Err(err).Msg("failed to start HandleCommands transaction")
+		return err
+	}
+	defer tx.Rollback()
 
 	hasPrefix := strings.HasPrefix(message.Message, config.Prefix)
 	if hasPrefix {
@@ -132,7 +136,12 @@ func HandleCommands(message *types.Message, sender types.MessageSender, config *
 		// check if command is no prefix
 		for _, noPrefixCmd := range commandsNoPrefix {
 			if noPrefixCmd.NoPrefixShouldRun != nil && noPrefixCmd.NoPrefixShouldRun(message, sender, args) {
-				cmdData, err = getCommandData(message, noPrefixCmd)
+				err = database.InsertUsers(tx, false, struct{ ID, Name string }{message.Chatter.ID, message.Chatter.Name})
+				if err != nil {
+					return err
+				}
+
+				cmdData, err = getCommandData(tx, message, noPrefixCmd)
 				if err != nil {
 					return err
 				}
@@ -161,18 +170,6 @@ func HandleCommands(message *types.Message, sender types.MessageSender, config *
 					return nil
 				}
 
-				err = noPrefixCmd.Execute(message, sender, args)
-				if err != nil {
-					return err
-				}
-
-				var tx *sql.Tx
-				tx, err = message.DB.Begin()
-				if err != nil {
-					return fmt.Errorf("failed to start last_used update transaction: %w", err)
-				}
-				defer tx.Rollback()
-
 				err = database.UpdateUserCommandLastUsed(tx, message.RoomID, noPrefixCmd.Name, message.Chatter.ID)
 				if err != nil {
 					return fmt.Errorf("failed to update last_used for command %s: %w", noPrefixCmd.Name, err)
@@ -183,6 +180,11 @@ func HandleCommands(message *types.Message, sender types.MessageSender, config *
 					return fmt.Errorf("failed to commit transaction to update last_used for command %s: %w", noPrefixCmd.Name, err)
 				}
 
+				err = noPrefixCmd.Execute(message, sender, args)
+				if err != nil {
+					return err
+				}
+
 				break
 			}
 		}
@@ -191,7 +193,12 @@ func HandleCommands(message *types.Message, sender types.MessageSender, config *
 	}
 
 	if cmd, ok := commandMap[args[0]]; ok {
-		cmdData, err = getCommandData(message, cmd)
+		err = database.InsertUsers(tx, false, struct{ ID, Name string }{message.Chatter.ID, message.Chatter.Name})
+		if err != nil {
+			return err
+		}
+
+		cmdData, err = getCommandData(tx, message, cmd)
 		if err != nil {
 			return err
 		}
@@ -220,17 +227,6 @@ func HandleCommands(message *types.Message, sender types.MessageSender, config *
 			return nil
 		}
 
-		if err = cmd.Execute(message, sender, args); err != nil {
-			return err
-		}
-
-		var tx *sql.Tx
-		tx, err = message.DB.Begin()
-		if err != nil {
-			return fmt.Errorf("failed to start last_used update transaction: %w", err)
-		}
-		defer tx.Rollback()
-
 		err = database.UpdateUserCommandLastUsed(tx, message.RoomID, cmd.Name, message.Chatter.ID)
 		if err != nil {
 			return fmt.Errorf("failed to update last_used for command %s: %w", cmd.Name, err)
@@ -240,6 +236,11 @@ func HandleCommands(message *types.Message, sender types.MessageSender, config *
 		if err != nil {
 			return fmt.Errorf("failed to commit transaction to update last_used for command %s: %w", cmd.Name, err)
 		}
+
+		if err = cmd.Execute(message, sender, args); err != nil {
+			return err
+		}
+
 	} else if hasPrefix {
 		return fmt.Errorf("unknown command: '%s' called by '%s'", args, message.Chatter.Name)
 	}
