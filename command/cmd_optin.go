@@ -9,7 +9,7 @@ var optin = types.Command{
 	Name:              "optin",
 	Aliases:           []string{},
 	Usage:             "optin [all] | optin [command]",
-	Description:       "Opt out of one or all commands",
+	Description:       "Opt in to one or all commands",
 	ChannelCooldown:   5,
 	UserCooldown:      5,
 	NoPrefix:          false,
