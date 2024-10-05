@@ -5,7 +5,7 @@ go 1.23.0
 require (
 	github.com/Potat-Industries/go-potatFilters v0.1.3
 	github.com/douglascdev/buttifier v0.1.3
-	github.com/gempir/go-twitch-irc/v4 v4.0.0
+	github.com/gempir/go-twitch-irc/v4 v4.2.0
 	github.com/ncruces/go-sqlite3 v0.18.2
 	github.com/rs/zerolog v1.33.0
 )
@@ -18,5 +18,3 @@ require (
 	github.com/tetratelabs/wazero v1.8.0 // indirect
 	golang.org/x/sys v0.25.0 // indirect
 )
-
-replace github.com/gempir/go-twitch-irc/v4 => github.com/douglascdev/go-twitch-irc/v4 v4.0.0-20240923162405-9bd425cb6891
