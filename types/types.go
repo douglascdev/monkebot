@@ -2,8 +2,9 @@ package types
 
 import (
 	"database/sql"
-	"monkebot/config"
 	"time"
+
+	"monkebot/config"
 
 	"github.com/gempir/go-twitch-irc/v4"
 )
@@ -56,17 +57,6 @@ type Message struct {
 }
 
 func NewMessage(msg twitch.PrivateMessage, db *sql.DB, cfg *config.Config) *Message {
-	IsBroadcaster := msg.RoomID == msg.User.ID
-
-	var (
-		IsMod bool
-		IsVIP bool
-	)
-	_, IsVIP = msg.Tags["vip"]
-	if value, tagFound := msg.Tags["mod"]; tagFound {
-		IsMod = value == "1"
-	}
-
 	return &Message{
 		ID:      msg.ID,
 		Message: msg.Message,
@@ -77,9 +67,9 @@ func NewMessage(msg twitch.PrivateMessage, db *sql.DB, cfg *config.Config) *Mess
 		Chatter: Chatter{
 			Name:          msg.User.Name,
 			ID:            msg.User.ID,
-			IsMod:         IsMod,
-			IsVIP:         IsVIP,
-			IsBroadcaster: IsBroadcaster,
+			IsMod:         msg.User.IsMod,
+			IsVIP:         msg.User.IsVip,
+			IsBroadcaster: msg.User.IsBroadcaster,
 		},
 		DB: db,
 	}
