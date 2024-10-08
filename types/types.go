@@ -9,6 +9,13 @@ import (
 	"github.com/gempir/go-twitch-irc/v4"
 )
 
+// Command is a struct defining a command.
+//
+// An ArgSpec is an argument specification, a struct defining the expected arguments for this command.
+// Each ArgSpec is an alternative valid set of arguments for this command, meaning
+// that if any of the ArgSpecs are matched, the Command will be executed.
+// The tags required(true/false) and argtype(positional/named) may be specified
+// for each field defined in an ArgSpec struct.
 type Command struct {
 	Name            string
 	Aliases         []string
@@ -19,7 +26,8 @@ type Command struct {
 	NoPrefix        bool
 	CanDisable      bool
 
-	// `json:"-"` excludes these 2 fields from being serialized into the command list json
+	// `json:"-"` excludes these fields from being serialized into the command list json
+	ArgSpecs          []interface{}                                                     `json:"-"`
 	NoPrefixShouldRun func(message *Message, sender MessageSender, args []string) bool  `json:"-"`
 	Execute           func(message *Message, sender MessageSender, args []string) error `json:"-"`
 }
