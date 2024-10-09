@@ -87,23 +87,24 @@ func getFirstMatchingArgSpec(nameToCmdArg *map[string]cmdArg, argSpecs ...interf
 		}
 
 		validFields := 0
+		totalFields := t.NumField()
 		for i := 0; i < t.NumField(); i++ {
 			field := t.Field(i)
 			if !field.IsExported() {
+				totalFields--
 				continue
 			}
 
 			var (
-				required   bool
-				argType    argType      = positional
-				argVarType reflect.Type = field.Type
+				required     bool
+				fieldArgType = positional
 			)
 
 			switch field.Tag.Get("argtype") {
 			case "named":
-				argType = named
+				fieldArgType = named
 			case "positional":
-				argType = positional
+				fieldArgType = positional
 			default:
 				err = fmt.Errorf("invalid argtype, must be 'named' or 'positional': %s", field.Tag.Get("argtype"))
 				return
@@ -119,8 +120,27 @@ func getFirstMatchingArgSpec(nameToCmdArg *map[string]cmdArg, argSpecs ...interf
 				return
 			}
 
+			if !required {
+				validFields++
+				continue
+			}
+
+			cmdArg, found := (*nameToCmdArg)[strings.ToLower(field.Name)]
+			if !found {
+				break
+			}
+
+			if cmdArg.Type != fieldArgType {
+				break
+			}
+
+			validFields++
 		}
 
+		if validFields == totalFields {
+			result = argSpec
+			return
+		}
 	}
 
 	err = ErrNoMatchingSpec
