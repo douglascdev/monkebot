@@ -1,6 +1,7 @@
 package command
 
 import (
+	"math/rand/v2"
 	"monkebot/types"
 	"regexp"
 )
@@ -20,7 +21,11 @@ var butt = types.Command{
 	},
 	CanDisable: true,
 	Execute: func(message *types.Message, sender types.MessageSender, args []string) error {
-		sender.Say(message.Channel, "butt")
+		if rand.IntN(100) == 1 {
+			sender.Say(message.Channel, "buttConcerned")
+		} else {
+			sender.Say(message.Channel, "butt")
+		}
 		return nil
 	},
 }
