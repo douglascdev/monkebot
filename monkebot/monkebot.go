@@ -2,13 +2,17 @@ package monkebot
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"monkebot/command"
 	"monkebot/config"
 	"monkebot/database"
 	"monkebot/twitchapi"
 	"monkebot/types"
+	"net/http"
+	"net/url"
 	"slices"
 	"strings"
 	"time"
@@ -28,8 +32,41 @@ type Monkebot struct {
 	buttifier    *buttifier.Buttifier
 }
 
+func refreshTwitchToken(cfg config.Config) (*string, error) {
+	resp, err := http.PostForm("https://id.twitch.tv/oauth2/token", url.Values{
+		"client_id":     {cfg.ClientID},
+		"client_secret": {cfg.ClientSecret},
+		"refresh_token": {cfg.RefreshToken},
+		"grant_type":    {"refresh_token"},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch oauth token from twitch client secret: %w", err)
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read token response body: %w", err)
+	}
+	var respMap map[string]json.RawMessage
+	err = json.Unmarshal(body, &respMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal oauth token response: %w", err)
+	}
+	var token string
+	err = json.Unmarshal(respMap["access_token"], &token)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal token value: %w", err)
+	}
+
+	return &token, nil
+}
+
 func NewMonkebot(cfg config.Config, db *sql.DB) (*Monkebot, error) {
-	client := twitch.NewClient(cfg.Login, "oauth:"+cfg.TwitchToken)
+	token, err := refreshTwitchToken(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to refresh twitch token: %w", err)
+	}
+	client := twitch.NewClient(cfg.Login, "oauth:"+*token)
 
 	butt, err := buttifier.New()
 	butt.ButtificationProbability = 0.05

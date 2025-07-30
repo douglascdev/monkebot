@@ -23,13 +23,15 @@ type RPGConfig struct {
 
 // changes to this struct must be reflected in tests and config.json
 type Config struct {
+	ClientID        string    `json:"ClientID"`
 	TwitchToken     string    `json:"TwitchToken"`
+	ClientSecret    string    `json:"ClientSecret"`
+	RefreshToken    string    `json:"RefreshToken"`
 	InitialChannels []string  `json:"InitialChannels"`
 	Prefix          string    `json:"Prefix"`
 	UserID          string    `json:"UserID"`
 	AdminUsernames  []string  `json:"AdminUsernames"`
 	Login           string    `json:"Login"`
-	ClientID        string    `json:"ClientID"`
 	DBConfig        DBConfig  `json:"DBConfig"`
 	RPGConfig       RPGConfig `json:"RPGConfig"`
 }
@@ -64,7 +66,8 @@ func MarshalConfig(cfg *Config) ([]byte, error) {
 func ConfigTemplateJSON() ([]byte, error) {
 	cfg := Config{
 		InitialChannels: []string{"hash_table"},
-		TwitchToken:     "YOUR_OAUTH_TOKEN_HERE",
+		ClientSecret:    "YOUR_CLIENT_SECRET_HERE",
+		RefreshToken:    "YOUR_REFRESH_TOKEN_HERE",
 		Prefix:          "!",
 		UserID:          "YOUR_USER_ID_HERE",
 		AdminUsernames:  []string{"hash_table"},
