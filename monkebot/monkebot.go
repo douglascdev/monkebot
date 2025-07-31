@@ -172,7 +172,7 @@ func NewMonkebot(cfg config.Config, db *sql.DB) (*Monkebot, error) {
 		}
 
 		for _, user := range users {
-			if slices.Contains(cfg.AdminUsernames, user.Name) {
+			if !slices.Contains(cfg.AdminUsernames, user.Name) {
 				continue
 			}
 			err = database.UpdateUserPermission(tx, user.Name, "admin")
