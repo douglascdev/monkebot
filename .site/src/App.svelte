@@ -2,30 +2,58 @@
   import svelteLogo from './assets/svelte.svg'
   import viteLogo from '/vite.svg'
   import Counter from './lib/Counter.svelte'
+
+  function loadTableData(data) {
+  const tableBody = document.querySelector('#commands-table tbody');
+  
+  data.forEach(command => {
+    const row = document.createElement('tr');
+
+    row.innerHTML = `
+      <td>${command.Name}</td>
+      <td>${command.Aliases.join(', ') || 'None'}</td>
+      <td>${command.Usage}</td>
+      <td>${command.Description}</td>
+      <td>${command.ChannelCooldown}</td>
+      <td>${command.UserCooldown}</td>
+      <td>${command.NoPrefix}</td>
+      <td>${command.CanDisable}</td>
+    `;
+
+    tableBody.appendChild(row);
+  });
+}
+
+let url = 'commands.json';
+fetch(url)
+.then(res => res.json())
+.then(out => loadTableData(out))
+.catch(err => console.log(err));
 </script>
 
 <main>
-  <div>
-    <a href="https://vite.dev" target="_blank" rel="noreferrer">
-      <img src={viteLogo} class="logo" alt="Vite Logo" />
-    </a>
-    <a href="https://svelte.dev" target="_blank" rel="noreferrer">
-      <img src={svelteLogo} class="logo svelte" alt="Svelte Logo" />
-    </a>
-  </div>
-  <h1>Vite + Svelte</h1>
-
   <div class="card">
     <Counter />
   </div>
+  <div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-100">
+  <table id="commands-table" class="table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Aliases</th>
+      <th>Usage</th>
+      <th>Description</th>
+      <th>Channel cooldown</th>
+      <th>User cooldown</th>
+      <th>No prefix</th>
+      <th>Can disable</th>
+    </tr>
+  </thead>
+  <tbody>
+  </tbody>
+  </table>
+  </div>
 
-  <p>
-    Check out <a href="https://github.com/sveltejs/kit#readme" target="_blank" rel="noreferrer">SvelteKit</a>, the official Svelte app framework powered by Vite!
-  </p>
-
-  <p class="read-the-docs">
-    Click on the Vite and Svelte logos to learn more
-  </p>
 </main>
 
 <style>
