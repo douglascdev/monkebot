@@ -27,4 +27,7 @@ go.work.sum
 
 # bot configs and sqlite databases
 *.json
+# except for node files
+!package.json
+!package-lock.json
 *.db*
