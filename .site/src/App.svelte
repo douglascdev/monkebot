@@ -1,7 +1,8 @@
 <script lang="ts">
   import svelteLogo from './assets/svelte.svg'
   import viteLogo from '/vite.svg'
-  import Counter from './lib/Counter.svelte'
+
+  export const prerender = true;
 
   function loadTableData(data) {
   const tableBody = document.querySelector('#commands-table tbody');
