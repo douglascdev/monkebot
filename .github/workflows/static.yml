@@ -51,12 +51,15 @@ jobs:
           cache-dependency-path: '**/package-lock.json'
 
       - name: Install dependencies
-        run: npm install
+        run: |
+          cd .site
+          npm install
 
       - name: build
         env:
           BASE_PATH: '/${{ github.event.repository.name }}'
         run: |
+          cd .site
           npm run build
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
